@@ -2,9 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-class Graph<T>
+class MyMath
 {
-    private List<T>[] G;
+    static long GCD(long a, long b)
+        => a == 0 ? b : GCD(b % a, a);
+
+    static long LCM(long a, long b)
+        => a / GCD(a, b) * b;
+
+
+}
+
+class Graph<T>//普通のグラフ
+{
+    protected List<T>[] G;
     public Graph(int size)
     {
         G = new List<T>[size];
@@ -19,12 +30,24 @@ class Graph<T>
     public List<T>[] ToListArray() => G;
     public int Length => G.Length;
 }
-
-/*class WeightedGraph<T>
+class Graph<T,U> //重み付きグラフ
 {
-    
+    private List<(T to, U cost)>[] G;
+    public Graph(int size)
+    {
+        G = new List<(T to, U cost)>[size];
+        for (int i = 0; i < size; i++)
+        {
+            G[i] = new List<(T, U)>();
+        }
+    }
+
+    public List<(T to,U cost)> this[int i] => G[i];
+    public void Add(int from, T to, U cost) => G[from].Add((to, cost));
+    public List<(T to, U cost)>[] ToListArray() => G;
+    public int Length => G.Length;
 }
-*/
+
 class TopologicalSort
 {   //ここからメソッドをコピペ
     static List<int> Topologicalsort(Graph<int> G,int[] Degrees)
@@ -147,8 +170,7 @@ public class PriorityQueue<T>
 
 class Dijkstraa
 {
-    //ここからメソッドをコピペ
-    static long[] Dijkstra(Graph<(int to, long cost)> G,int sp)
+    public static long[] Search(Graph<int, long> G, int sp)
     {
         //sp からスタート
         var d = Enumerable.Repeat(long.MaxValue, G.Length).ToArray();
@@ -160,23 +182,24 @@ class Dijkstraa
             var p = que.Pop();
             int v = p.to;
             if (d[v] < p.cost) continue;
-            foreach (var i in G[v])
+            foreach (var (to, cost) in G[v])
             {
-                if (d[i.to] > d[v] + i.cost)
+                if (d[to] > d[v] + cost)
                 {
-                    d[i.to] = d[v] + i.cost;
-                    que.Push((i.to, d[i.to]));
+                    d[to] = d[v] + cost;
+                    que.Push((to, d[to]));
                 }
             }
         }
         return d;
     }
-
+    public static long Search(Graph<int, long> G, int sp, int gp)
+        => Search(G, sp)[gp];
 }
 
 class 半分全列挙
 {
-    static long HalfFullEnumeration((long v, long w)[] Pairs, long W)
+    public long HalfFullEnumeration((long v, long w)[] Pairs, long W)
     {
         int N = Pairs.Length;
         int n2 = N / 2;
@@ -237,14 +260,14 @@ class 半分全列挙
 
 class MinimumSpanningTree
 {
-    private Graph<(int to, long cost)> MSTree;
+    private Graph<int,long> MSTree;
     private List<(int u, int v, long cost)> es;
     private int V;
     public long costsum = 0;
-    public MinimumSpanningTree(Graph<(int to, long cost)> G)
+    public MinimumSpanningTree(Graph<int,long> G)
     {
         es = new List<(int u,int v, long cost)>();
-        MSTree = new Graph<(int to, long cost)>(G.Length);
+        MSTree = new Graph<int, long>(G.Length);
         for (int i = 0; i < G.Length; i++)
         {
             foreach (var j in G[i])
@@ -268,8 +291,8 @@ class MinimumSpanningTree
             {
                 union.Unite(e.u, e.v);
                 res += e.cost;
-                MSTree.Add(e.u, (e.v, e.cost));
-                MSTree.Add(e.v, (e.u, e.cost));
+                MSTree.Add(e.u, e.v, e.cost);
+                MSTree.Add(e.v, e.u, e.cost);
             }
         }
         return res;
@@ -278,29 +301,23 @@ class MinimumSpanningTree
     public List<(int to,long cost)> this[int i] =>MSTree[i];
 }
 
-class Modular
+class Modular  //Modしながら計算するクラス
 {
     private const int M = 1000000007;
     private long value;
-    public Modular(long value) { this.value = value; }
+    public Modular(long value = 0) { this.value = value; }
     public static implicit operator Modular(long a)
     {
         var m = a % M;
         return new Modular((m < 0) ? m + M : m);
     }
     public static Modular operator +(Modular a, Modular b)
-    {
-        return a.value + b.value;
-    }
+    => a.value + b.value;
     public static Modular operator -(Modular a, Modular b)
-    {
-        return a.value - b.value;
-    }
+    => a.value - b.value;
     public static Modular operator *(Modular a, Modular b)
-    {
-        return a.value * b.value;
-    }
-    private static Modular Pow(Modular a, int n)
+    => a.value * b.value;
+    public static Modular Pow(Modular a, int n)
     {
         switch (n)
         {
@@ -318,7 +335,7 @@ class Modular
         return a * Pow(b, M - 2);
     }
     private static readonly List<int> facs = new List<int> { 1 };
-    private static Modular Fac(int n)
+    public static Modular Fac(int n)   //階乗
     {
         for (int i = facs.Count; i <= n; ++i)
         {
@@ -326,14 +343,64 @@ class Modular
         }
         return facs[n];
     }
-    public static Modular Ncr(int n, int r)
+    public static Modular Fac(int r, int n)
+    {
+        int temp = 1;
+        for (int i = r; i <= n; i++)
+        {
+            temp = (int)(Math.BigMul(temp, i) % M);
+        }
+        return temp;
+    }
+    public static Modular Ncr(int n, int r) //nCr
     {
         return (n < r) ? 0
              : (n == r) ? 1
-                        : Fac(n) / (Fac(r) * Fac(n - r));
+                        : (n < 1000000) ? Fac(n) / (Fac(r) * Fac(n - r))
+                            : Fac(n - r + 1, n) / Fac(r);
     }
     public static explicit operator int(Modular a)
     {
         return (int)a.value;
     }
+}
+
+class ZAlgorithm//先頭文字列と何文字一致しているか
+{
+    private static string S;
+    private int[] Same;
+    public ZAlgorithm(string s)
+    {
+        S = s;
+        Same = Search();
+    }
+    static int[] Search()
+    {
+        int N = S.Length;
+        int c = 0;
+        var Z = new int[N];
+        for (int i = 1; i < N; i++)
+        {
+            int l = i - c;
+            if (i + Z[l] < c + Z[c])
+            {
+                Z[i] = Z[l];
+            }
+            else
+            {
+                int leng = Math.Max(0, c + Z[c] - i);
+                while (leng + i < N && S[i + leng] == S[leng])
+                {
+                    leng++;
+                }
+                Z[i] = leng;
+                c++;
+            }
+
+        }
+        Z[0] = N;
+        return Z;
+    }
+
+    public int this[int i] => Same[i];
 }
