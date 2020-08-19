@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-class MyMath
+static class MyMath
 {
     static long GCD(long a, long b)
         => a == 0 ? b : GCD(b % a, a);
@@ -10,10 +10,9 @@ class MyMath
     static long LCM(long a, long b)
         => a / GCD(a, b) * b;
 
-
 }
 
-class Graph<T>//普通のグラフ
+class Graph<T>//有向グラフforeachもできる
 {
     protected List<T>[] G;
     public Graph(int size)
@@ -26,11 +25,12 @@ class Graph<T>//普通のグラフ
     }
 
     public List<T> this[int i] => G[i];
-    public void Add(int from, T to) => G[from].Add(to);
+    public void AddEdge(int from, T to) => G[from].Add(to);
     public List<T>[] ToListArray() => G;
     public int Length => G.Length;
 }
-class Graph<T,U> //重み付きグラフ
+
+class Graph<T,U> //重み付き有向グラフ
 {
     private List<(T to, U cost)>[] G;
     public Graph(int size)
@@ -43,12 +43,12 @@ class Graph<T,U> //重み付きグラフ
     }
 
     public List<(T to,U cost)> this[int i] => G[i];
-    public void Add(int from, T to, U cost) => G[from].Add((to, cost));
+    public void AddEdge(int from, T to, U cost) => G[from].Add((to, cost));
     public List<(T to, U cost)>[] ToListArray() => G;
     public int Length => G.Length;
 }
 
-class TopologicalSort
+static class TopologicalSort
 {   //ここからメソッドをコピペ
     static List<int> Topologicalsort(Graph<int> G,int[] Degrees)
     {
@@ -168,7 +168,7 @@ public class PriorityQueue<T>
     }
 }
 
-class Dijkstraa
+static class Dijkstraa
 {
     public static long[] Search(Graph<int, long> G, int sp)
     {
@@ -197,9 +197,9 @@ class Dijkstraa
         => Search(G, sp)[gp];
 }
 
-class 半分全列挙
+static class 半分全列挙
 {
-    public long HalfFullEnumeration((long v, long w)[] Pairs, long W)
+    public static long HalfFullEnumeration((long v, long w)[] Pairs, long W)
     {
         int N = Pairs.Length;
         int n2 = N / 2;
@@ -291,8 +291,8 @@ class MinimumSpanningTree
             {
                 union.Unite(e.u, e.v);
                 res += e.cost;
-                MSTree.Add(e.u, e.v, e.cost);
-                MSTree.Add(e.v, e.u, e.cost);
+                MSTree.AddEdge(e.u, e.v, e.cost);
+                MSTree.AddEdge(e.v, e.u, e.cost);
             }
         }
         return res;
@@ -301,7 +301,7 @@ class MinimumSpanningTree
     public List<(int to,long cost)> this[int i] =>MSTree[i];
 }
 
-class Modular  //Modしながら計算するクラス
+class Modular  //Modしながら計算する型
 {
     private const int M = 1000000007;
     private long value;
@@ -403,4 +403,40 @@ class ZAlgorithm//先頭文字列と何文字一致しているか
     }
 
     public int this[int i] => Same[i];
+}
+
+class BIT//区間の和をlogNで求める
+{
+    private int[] bit;
+    private int N;
+    public BIT(int n)
+    {
+        bit = new int[n + 1];
+        N = n;
+    }
+
+    public int Sum(int i)//[0,i)
+    {
+        int s = 0;
+        while (i > 0)
+        {
+            s += bit[i];
+            i -= (i & -i);
+        }
+        return s;
+    }
+    public void Add(int i, int x)
+    {
+        i++;
+        while (i <= N)
+        {
+            bit[i] += x;
+            i += (i & (-i));
+        }
+    }
+    public int this[int i]
+    {
+        set => Add(i, value - this[i]);
+        get => Sum(i + 1) - Sum(i);
+    }
 }
