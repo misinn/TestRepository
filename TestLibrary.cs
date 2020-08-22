@@ -2,20 +2,104 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-static class MyMath
+class MyMath
 {
-    static long GCD(long a, long b)
+    public static long GCD(long a, long b)
         => a == 0 ? b : GCD(b % a, a);
-
-    static long LCM(long a, long b)
+    public static long LCM(long a, long b)
         => a / GCD(a, b) * b;
+    public static int ModPow(int a, int b, int mod) //未テスト　オーバーフローの可能性あり
+    {
+        if (b == 0) return 1;
+        else if (b == 1) return a;
+        else
+        {
+            int p = ModPow(a, b/2, mod);//p*p*ModPow(a,b%2) ,p=ModPow(a,b/2)
+            return (int)(Math.BigMul((int)(Math.BigMul(p, p) % mod), ModPow(a, b % 2, mod))%mod);
+        }
+
+    }
+    public static int Max(int a, int b, int c)
+        => Math.Max(a, Math.Max(b, c));
+    public static long Max(long a, long b, long c)
+        => Math.Max(a, Math.Max(b, c));
+    public static double Max(double a, double b, double c)
+        => Math.Max(a, Math.Max(b, c));
+    public static int Max(int a, int b, int c, int d)
+        => Math.Max(a, Math.Max(b, Math.Max(c, d)));
+    public static long Max(long a, long b, long c, long d)
+        => Math.Max(a, Math.Max(b, Math.Max(c, d)));
+    public static double Max(double a, double b, double c, double d)
+        => Math.Max(a, Math.Max(b, Math.Max(c, d)));
+
+    public static int Min(int a, int b, int c)
+        => Math.Min(a, Math.Min(b, c));
+    public static long Min(long a, long b, long c)
+        => Math.Min(a, Math.Min(b, c));
+    public static double Min(double a, double b, double c)
+        => Math.Min(a, Math.Min(b, c));
+    public static int Min(int a, int b, int c, int d)
+        => Math.Max(a, Math.Min(b, Math.Min(c, d)));
+    public static long Min(long a, long b, long c, long d)
+        => Math.Max(a, Math.Min(b, Math.Min(c, d)));
+    public static double Min(double a, double b, double c, double d)
+        => Math.Max(a, Math.Min(b, Math.Min(c, d)));
 
 }
 
-class Graph<T>//有向グラフforeachもできる
+class Scanner
+{
+    public static int RInt() => ReadStream<int>();
+    public static long RLong() => ReadStream<long>();
+    public static string RString() => Console.ReadLine();
+    public static double RDouble() => ReadStream<double>();
+
+    public static int[] RInts() => Array.ConvertAll(Console.ReadLine().Split(), int.Parse);
+    public static int[] RInts(Func<string, int> func) => Console.ReadLine().Split().Select(func).ToArray();
+    public static long[] RLongs() => Array.ConvertAll(Console.ReadLine().Split(), long.Parse);
+    public static long[] RLongs(Func<string, long> func) => Console.ReadLine().Split().Select(func).ToArray();
+    public static double[] RDoubles() => Array.ConvertAll(Console.ReadLine().Split(), double.Parse);
+    public static double[] RDoubles(Func<string, double> func) => Console.ReadLine().Split().Select(func).ToArray();
+    public static string[] RStrings() => Console.ReadLine().Split();
+    //public static string[] RStrings(Func<string, string> func) => Console.ReadLine().Split().Select(func).ToArray();
+
+    public static T1 ReadStream<T1>()
+    {
+        var r = RString();
+        var r1 = (T1)Convert.ChangeType(r, typeof(T1));
+        return r1;
+    }
+    public static (T1, T2) ReadStream<T1, T2>()
+    {
+        var r = RStrings();
+        var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
+        var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
+        return (r1, r2);
+    }
+    public static (T1, T2, T3) ReadStream<T1, T2, T3>()
+    {
+        var r = RStrings();
+        var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
+        var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
+        var r3 = (T3)Convert.ChangeType(r[2], typeof(T3));
+        return (r1, r2, r3);
+    }
+    public static (T1, T2, T3, T4) ReadStream<T1, T2, T3, T4>()
+    {
+        var r = RStrings();
+        var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
+        var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
+        var r3 = (T3)Convert.ChangeType(r[0], typeof(T3));
+        var r4 = (T4)Convert.ChangeType(r[0], typeof(T4));
+        return (r1, r2, r3, r4);
+    }
+}
+
+
+class Graph<T>//有向グラフ
 {
     protected List<T>[] G;
-    public Graph(int size)
+    public Graph(int size=200002)
     {
         G = new List<T>[size];
         for (int i = 0; i < size; i++)
@@ -33,7 +117,7 @@ class Graph<T>//有向グラフforeachもできる
 class Graph<T,U> //重み付き有向グラフ
 {
     private List<(T to, U cost)>[] G;
-    public Graph(int size)
+    public Graph(int size=200002)
     {
         G = new List<(T to, U cost)>[size];
         for (int i = 0; i < size; i++)
@@ -49,7 +133,8 @@ class Graph<T,U> //重み付き有向グラフ
 }
 
 static class TopologicalSort
-{   //ここからメソッドをコピペ
+{   
+    //Degreesはその頂点からのびる辺の数
     static List<int> Topologicalsort(Graph<int> G,int[] Degrees)
     {
         var que = new Queue<int>();
@@ -331,9 +416,8 @@ class Modular  //Modしながら計算する型
         }
     }
     public static Modular operator /(Modular a, Modular b)
-    {
-        return a * Pow(b, M - 2);
-    }
+    => a * Pow(b, M - 2);
+    
     private static readonly List<int> facs = new List<int> { 1 };
     public static Modular Fac(int n)   //階乗
     {
@@ -438,5 +522,49 @@ class BIT//区間の和をlogNで求める
     {
         set => Add(i, value - this[i]);
         get => Sum(i + 1) - Sum(i);
+    }
+}
+
+//練習用RMQ
+//これを修正して他のクエリに対応させる
+class SegTree
+{
+    static readonly int MAX_N = 1 << 17;
+    static int n;
+    static int[] dat = new int[2 * MAX_N - 1];
+
+    public SegTree(int N)
+    {
+        n = 1;
+        while (n <= N) n *= 2;
+        for (int i = 0; i < 2 * n - 1; i++)//初期値
+        {
+            dat[i] = int.MaxValue;
+        }
+    }
+    //節ごとにその範囲の答えをいれる。
+    public void Update(int k, int a)
+    {
+        k += n - 1;
+        dat[k] = a;
+        while (k > 0)
+        {
+            k = (k - 1) / 2;
+            dat[k] = Math.Min(dat[k * 2 + 1], dat[k * 2 + 2]);
+        }
+    }
+    //[a,b)の最小値を求めるクエリ
+    //[l,r)区間と配列のk番目が対応している。
+    public int Query(int a, int b) => Query(a, b, 0, 0, n);
+    private int Query(int a, int b, int k, int l, int r)
+    {
+        if (r <= a || b <= l) return int.MaxValue;//範囲が重ならないとき
+        else if (a <= l && r <= b) return dat[k];//範囲が完全に含まれるとき
+        else//どっちかが範囲外の時
+        {
+            int vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
+            int vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
+            return Math.Min(vl, vr);
+        }
     }
 }
