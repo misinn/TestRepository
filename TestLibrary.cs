@@ -89,8 +89,8 @@ class Scanner
         var r = RStrings();
         var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
         var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
-        var r3 = (T3)Convert.ChangeType(r[0], typeof(T3));
-        var r4 = (T4)Convert.ChangeType(r[0], typeof(T4));
+        var r3 = (T3)Convert.ChangeType(r[2], typeof(T3));
+        var r4 = (T4)Convert.ChangeType(r[3], typeof(T4));
         return (r1, r2, r3, r4);
     }
 }
