@@ -19,6 +19,7 @@ static class DebuggingTools
         }
         return ary;
     }
+
 }
 
 
@@ -480,10 +481,10 @@ class Modular
     => a.value - b.value;
     public static Modular operator *(Modular a, Modular b)
     => a.value * b.value;
-    public static Modular Pow(Modular a, int n)
+    public static Modular Pow(Modular a, long n)
     {
         Modular ans = 1;
-        for (n %= M - 1; n > 0; n >>= 1, a = a * a)
+        for (; n > 0; n >>= 1, a *= a)
         {
             if ((n & 1) == 1) ans *= a;
         }
