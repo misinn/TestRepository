@@ -2,81 +2,97 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-class MyMath
+static class DebuggingTools
+{
+    public static int Random(int min, int max)
+    {
+        var rand = new Random(DateTime.Now.Millisecond);
+        return rand.Next(min, max);
+    }
+    public static int[] RandomArray(int n, int min, int max)
+    {
+        var ary = new int[n];
+        var rand = new Random(DateTime.Now.Millisecond);
+        for (int i = 0; i < n; i++)
+        {
+            ary[i] = rand.Next(min, max);
+        }
+        return ary;
+    }
+}
+
+
+class MyExtention
 {
     public static long GCD(long a, long b)
         => a == 0 ? b : GCD(b % a, a);
     public static long LCM(long a, long b)
         => a / GCD(a, b) * b;
-    public static int ModPow(int a, int b, int mod) //未テスト　オーバーフローの可能性あり
+
+    public static long ModPow(long a,long n,long Mod) //未テスト　オーバーフローの可能性あり
     {
-        if (b == 0) return 1;
-        else if (b == 1) return a;
-        else
+        long ans = 1;
+        while (n > 0)
         {
-            int p = ModPow(a, b/2, mod);//p*p*ModPow(a,b%2) ,p=ModPow(a,b/2)
-            return (int)(Math.BigMul((int)(Math.BigMul(p, p) % mod), ModPow(a, b % 2, mod))%mod);
+            if (n % 2 == 1)
+                ans = ans * a % Mod;
+            a = a * a % Mod;
+            n /= 2;
         }
-
+        return ans;
     }
-    public static int Max(int a, int b, int c)
-        => Math.Max(a, Math.Max(b, c));
-    public static long Max(long a, long b, long c)
-        => Math.Max(a, Math.Max(b, c));
-    public static double Max(double a, double b, double c)
-        => Math.Max(a, Math.Max(b, c));
-    public static int Max(int a, int b, int c, int d)
-        => Math.Max(a, Math.Max(b, Math.Max(c, d)));
-    public static long Max(long a, long b, long c, long d)
-        => Math.Max(a, Math.Max(b, Math.Max(c, d)));
-    public static double Max(double a, double b, double c, double d)
-        => Math.Max(a, Math.Max(b, Math.Max(c, d)));
+    public static T Max<T>(params T[] nums) where T : IComparable
+    {
+        T max = nums[0];
+        for (int i = 1; i < nums.Length; i++)
+        {
+            if (max.CompareTo(nums[i]) < 0) max = nums[i];
+        }
+        return max;
+    }
+    public static T Min<T>(params T[] nums) where T : IComparable
+    {
+        T min = nums[0];
+        for (int i = 1; i < nums.Length; i++)
+        {
+            if (min.CompareTo(nums[i]) > 0) min = nums[i];
+        }
+        return min;
+    }
 
-    public static int Min(int a, int b, int c)
-        => Math.Min(a, Math.Min(b, c));
-    public static long Min(long a, long b, long c)
-        => Math.Min(a, Math.Min(b, c));
-    public static double Min(double a, double b, double c)
-        => Math.Min(a, Math.Min(b, c));
-    public static int Min(int a, int b, int c, int d)
-        => Math.Max(a, Math.Min(b, Math.Min(c, d)));
-    public static long Min(long a, long b, long c, long d)
-        => Math.Max(a, Math.Min(b, Math.Min(c, d)));
-    public static double Min(double a, double b, double c, double d)
-        => Math.Max(a, Math.Min(b, Math.Min(c, d)));
 
 }
 
 class Scanner
 {
-    public static int RInt() => ReadStream<int>();
-    public static long RLong() => ReadStream<long>();
     public static string RString() => Console.ReadLine();
-    public static double RDouble() => ReadStream<double>();
+    public static int RInt() => ReadTuple<int>();
+    public static long RLong() => ReadTuple<long>();
+    public static double RDouble() => ReadTuple<double>();
 
-    public static int[] RInts() => Array.ConvertAll(Console.ReadLine().Split(), int.Parse);
-    public static int[] RInts(Func<string, int> func) => Console.ReadLine().Split().Select(func).ToArray();
-    public static long[] RLongs() => Array.ConvertAll(Console.ReadLine().Split(), long.Parse);
-    public static long[] RLongs(Func<string, long> func) => Console.ReadLine().Split().Select(func).ToArray();
-    public static double[] RDoubles() => Array.ConvertAll(Console.ReadLine().Split(), double.Parse);
-    public static double[] RDoubles(Func<string, double> func) => Console.ReadLine().Split().Select(func).ToArray();
     public static string[] RStrings() => Console.ReadLine().Split();
+    public static int[] RInts() => Array.ConvertAll(Console.ReadLine().Split(), int.Parse);
+    public static long[] RLongs() => Array.ConvertAll(Console.ReadLine().Split(), long.Parse);
+    public static double[] RDoubles() => Array.ConvertAll(Console.ReadLine().Split(), double.Parse);
+    public static int[] RInts(Func<string, int> func) => Console.ReadLine().Split().Select(func).ToArray();
+    public static long[] RLongs(Func<string, long> func) => Console.ReadLine().Split().Select(func).ToArray();
+    public static double[] RDoubles(Func<string, double> func) => Console.ReadLine().Split().Select(func).ToArray();
     //public static string[] RStrings(Func<string, string> func) => Console.ReadLine().Split().Select(func).ToArray();
 
-    public static T1 ReadStream<T1>()
+    public static T1 ReadTuple<T1>()
     {
         var r = RString();
         var r1 = (T1)Convert.ChangeType(r, typeof(T1));
         return r1;
     }
-    public static (T1, T2) ReadStream<T1, T2>()
+    public static (T1, T2) ReadTuple<T1, T2>()
     {
         var r = RStrings();
         var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
         var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
         return (r1, r2);
     }
-    public static (T1, T2, T3) ReadStream<T1, T2, T3>()
+    public static (T1, T2, T3) ReadTuple<T1, T2, T3>()
     {
         var r = RStrings();
         var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
@@ -84,7 +100,7 @@ class Scanner
         var r3 = (T3)Convert.ChangeType(r[2], typeof(T3));
         return (r1, r2, r3);
     }
-    public static (T1, T2, T3, T4) ReadStream<T1, T2, T3, T4>()
+    public static (T1, T2, T3, T4) ReadTuple<T1, T2, T3, T4>()
     {
         var r = RStrings();
         var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
@@ -96,11 +112,61 @@ class Scanner
 }
 
 
+class IndexConverter<T> //文字列など 数の順列に変換する。
+{
+    static Dictionary<T, int> itemToIndex = new Dictionary<T, int>();
+    static List<T> indexToItem = new List<T>();
+
+    public T GetItem(int i) => indexToItem[i];
+    public int GetIndex(T item) => itemToIndex[item];
+    public void Add(T item)
+    {
+        if (itemToIndex.ContainsKey(item)) return;
+
+        itemToIndex[item] = itemToIndex.Count;
+        indexToItem.Add(item);
+    }
+}
+
+class Counter<T> //valueをlongに限定したDictionary キーがない値を参照してもエラーしない 初期化 0
+{
+    private static Dictionary<T, long> dic;
+    public Counter()
+    {
+        dic = new Dictionary<T, long>();
+    }
+    public long this[T item]
+    {
+        set
+        {
+            dic.TryGetValue(item, out long v);
+            dic[item] = v + value;
+        }
+        get
+        {
+            dic.TryGetValue(item, out long v);
+            return v;
+        }
+    }
+    public IEnumerator<KeyValuePair<T, long>> GetEnumerator()
+    {
+        foreach (var item in dic)
+        {
+            yield return item;
+        }
+    }
+    public bool ContainsKey(T item) => dic.ContainsKey(item);
+    public Dictionary<T, long>.KeyCollection Keys => dic.Keys;
+    public Dictionary<T, long>.ValueCollection Values => dic.Values;
+}
+
+
 class Graph<T>//有向グラフ
 {
     protected List<T>[] G;
-    public Graph(int size=200002)
+    public Graph(int size = 200002)
     {
+        
         G = new List<T>[size];
         for (int i = 0; i < size; i++)
         {
@@ -114,10 +180,12 @@ class Graph<T>//有向グラフ
     public int Length => G.Length;
 }
 
-class Graph<T,U> //重み付き有向グラフ
+
+
+class Graph<T, U> //重み付き有向グラフ
 {
     private List<(T to, U cost)>[] G;
-    public Graph(int size=200002)
+    public Graph(int size = 200002)
     {
         G = new List<(T to, U cost)>[size];
         for (int i = 0; i < size; i++)
@@ -126,16 +194,17 @@ class Graph<T,U> //重み付き有向グラフ
         }
     }
 
-    public List<(T to,U cost)> this[int i] => G[i];
+    public List<(T to, U cost)> this[int i] => G[i];
     public void AddEdge(int from, T to, U cost) => G[from].Add((to, cost));
     public List<(T to, U cost)>[] ToListArray() => G;
     public int Length => G.Length;
 }
 
+
 static class TopologicalSort
-{   
-    //Degreesはその頂点からのびる辺の数
-    static List<int> Topologicalsort(Graph<int> G,int[] Degrees)
+{
+    //Degreesはその頂点にのびる辺の数 無理ならnullを返す
+    static List<int> Topologicalsort(Graph<int> G, int[] Degrees)
     {
         var que = new Queue<int>();
         for (int i = 0; i < Degrees.Length; i++)
@@ -149,16 +218,18 @@ static class TopologicalSort
         {
             var v = que.Dequeue();
             sorted.Add(v);
-            foreach(var i in G[v])
+            foreach (var i in G[v])
             {
                 Degrees[i]--;
                 if (Degrees[i] == 0)
                     que.Enqueue(i);
             }
         }
+        if (Degrees.Length != sorted.Count) return null;
         return sorted;
     }
 }
+
 
 public class Union_Find
 {
@@ -189,6 +260,7 @@ public class Union_Find
     public int Root(int x) => data[x] < 0 ? x : data[x] = Root(data[x]);
     public int getMem(int x) => -data[Root(x)];
 }
+
 
 public class PriorityQueue<T>
 {
@@ -253,6 +325,7 @@ public class PriorityQueue<T>
     }
 }
 
+
 static class Dijkstraa
 {
     public static long[] Search(Graph<int, long> G, int sp)
@@ -281,6 +354,7 @@ static class Dijkstraa
     public static long Search(Graph<int, long> G, int sp, int gp)
         => Search(G, sp)[gp];
 }
+
 
 static class 半分全列挙
 {
@@ -343,15 +417,16 @@ static class 半分全列挙
     }
 }
 
+
 class MinimumSpanningTree
 {
-    private Graph<int,long> MSTree;
+    private Graph<int, long> MSTree;
     private List<(int u, int v, long cost)> es;
     private int V;
     public long costsum = 0;
-    public MinimumSpanningTree(Graph<int,long> G)
+    public MinimumSpanningTree(Graph<int, long> G)
     {
-        es = new List<(int u,int v, long cost)>();
+        es = new List<(int u, int v, long cost)>();
         MSTree = new Graph<int, long>(G.Length);
         for (int i = 0; i < G.Length; i++)
         {
@@ -363,7 +438,7 @@ class MinimumSpanningTree
         V = G.Length;
         costsum = kruskal();
     }
-    
+
     private long kruskal()
     {
         es.Sort((x, y) => x.cost.CompareTo(y.cost));
@@ -383,14 +458,17 @@ class MinimumSpanningTree
         return res;
     }
 
-    public List<(int to,long cost)> this[int i] =>MSTree[i];
+    public List<(int to, long cost)> this[int i] => MSTree[i];
 }
 
-class Modular  //Modしながら計算する型
+
+class Modular
 {
     private const int M = 1000000007;
+    private const int arysize = 2000001;
     private long value;
     public Modular(long value = 0) { this.value = value; }
+    public override string ToString(){ return value.ToString(); }
     public static implicit operator Modular(long a)
     {
         var m = a % M;
@@ -404,30 +482,30 @@ class Modular  //Modしながら計算する型
     => a.value * b.value;
     public static Modular Pow(Modular a, int n)
     {
-        switch (n)
+        Modular ans = 1;
+        for (n %= M - 1; n > 0; n >>= 1, a = a * a)
         {
-            case 0:
-                return 1;
-            case 1:
-                return a;
-            default:
-                var p = Pow(a, n / 2);
-                return p * p * Pow(a, n % 2);
+            if ((n & 1) == 1) ans *= a;
         }
+        return ans;
     }
     public static Modular operator /(Modular a, Modular b)
-    => a * Pow(b, M - 2);
-    
-    private static readonly List<int> facs = new List<int> { 1 };
+    {
+        return a * Pow(b, M - 2);
+    }
+    private static int[] facs = new int[arysize];
+    private static int facscount = -1;
+
     public static Modular Fac(int n)   //階乗
     {
-        for (int i = facs.Count; i <= n; ++i)
+        facs[0] = 1;
+        while (++facscount <= n)
         {
-            facs.Add((int)(Math.BigMul(facs.Last(), i) % M));
+            facs[facscount + 1] = (int)(Math.BigMul(facs[facscount], facscount + 1) % M);
         }
         return facs[n];
     }
-    public static Modular Fac(int r, int n)
+    public static Modular Fac(int r, int n)//記録しない階乗
     {
         int temp = 1;
         for (int i = r; i <= n; i++)
@@ -440,7 +518,7 @@ class Modular  //Modしながら計算する型
     {
         return (n < r) ? 0
              : (n == r) ? 1
-                        : (n < 1000000) ? Fac(n) / (Fac(r) * Fac(n - r))
+                        : (Math.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
                             : Fac(n - r + 1, n) / Fac(r);
     }
     public static explicit operator int(Modular a)
@@ -448,6 +526,7 @@ class Modular  //Modしながら計算する型
         return (int)a.value;
     }
 }
+
 
 class ZAlgorithm//先頭文字列と何文字一致しているか
 {
@@ -489,6 +568,7 @@ class ZAlgorithm//先頭文字列と何文字一致しているか
     public int this[int i] => Same[i];
 }
 
+
 class BIT//区間の和をlogNで求める
 {
     private int[] bit;
@@ -524,6 +604,7 @@ class BIT//区間の和をlogNで求める
         get => Sum(i + 1) - Sum(i);
     }
 }
+
 
 //練習用RMQ
 //これを修正して他のクエリに対応させる
@@ -565,6 +646,73 @@ class SegTree
             int vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
             int vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
             return Math.Min(vl, vr);
+        }
+    }
+}
+
+//遅延評価セグ木
+//区間加算と区間和の計算 どちらもO(logN)
+class LazySegment
+{
+    int n;
+    int[] Data, Lazy;
+
+    public LazySegment(int[] v)
+    {
+        int N = v.Length;
+        n = 1; while (n < N) n *= 2;
+        Data = new int[n * 2 - 1];
+        Lazy = new int[n * 2 - 1];
+        for (int i = 0; i < N; i++)
+        {
+            Data[i + n - 1] = v[i];
+        }
+        for (int i = n - 2; i >= 0; i--)//二段目n-1から(一段目は2n-1)
+        {
+            Data[i] = Data[i * 2 + 1] + Data[i * 2 + 2];
+        }
+    }
+    void eval(int k, int l, int r)//nodeが呼び出された時に伝達する。
+    {
+        if (Lazy[k] != 0)
+        {
+            Data[k] += Lazy[k];
+            if (r - l > 1)
+            {
+                Lazy[k * 2 + 1] += Lazy[k] / 2;
+                Lazy[k * 2 + 2] += Lazy[k] / 2;
+            }
+        }
+        Lazy[k] = 0;
+    }
+    public void Update(int a, int b, int x) => Update(a, b, x, 0, 0, n);
+    public void Update(int a, int b, int x, int k, int l, int r)
+    {
+        eval(k, l, r);
+        if (b <= l || r <= a) return;
+        if (a <= l && r <= b)//完全にl,rが含まれる
+        {
+            Lazy[k] += (r - l) * x;
+            eval(k, l, r);
+        }
+        else//どっちか片方範囲外
+        {
+            Update(a, b, x, k * 2 + 1, l, (l + r) / 2);
+            Update(a, b, x, k * 2 + 2, (l + r) / 2, r);
+            Data[k] = Data[k * 2 + 1] + Data[k * 2 + 1];
+        }
+    }
+    public int Query(int a, int b) => Query(a, b, 0, 0, n);
+    private int Query(int a, int b, int k, int l, int r)
+    {
+        if (b <= l || r <= a) return 0;
+        eval(k, l, r);
+        if (a <= l && r <= b) return Data[k];
+        else
+        {
+            var vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
+            var vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
+            return vl + vr;
         }
     }
 }
