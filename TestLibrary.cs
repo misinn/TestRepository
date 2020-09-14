@@ -131,7 +131,7 @@ class IndexConverter<T> //文字列など 数の順列に変換する。
 
 class Counter<T> //valueをlongに限定したDictionary キーがない値を参照してもエラーしない 初期化 0
 {
-    private static Dictionary<T, long> dic;
+    private Dictionary<T, long> dic;
     public Counter()
     {
         dic = new Dictionary<T, long>();
@@ -141,7 +141,7 @@ class Counter<T> //valueをlongに限定したDictionary キーがない値を�
         set
         {
             dic.TryGetValue(item, out long v);
-            dic[item] = v + value;
+            dic[item] = value;
         }
         get
         {
@@ -528,6 +528,87 @@ class Modular
     }
 }
 
+class Mat
+{
+    private readonly long[][] mat;
+    private static readonly long Mod = 1000000007;
+    public Mat(int _size)
+    {
+        Size = _size;
+        mat = new long[Size][];
+        for (int i = 0; i < Size; i++)
+        {
+            mat[i] = new long[Size];
+        }
+    }
+    public int Size { get; }
+    public long this[int i, int j]
+    {
+        set
+        {
+            mat[i][j] = value;
+        }
+        get
+        {
+            return mat[i][j];
+        }
+    }
+    public static Mat operator +(Mat a, Mat b)
+    {
+        if (a.Size != b.Size) throw new Exception($"行列のサイズが違います。");
+        for (int i = 0; i < a.Size; i++)
+        {
+            for (int j = 0; j < a.Size; j++)
+            {
+                a[i, j] = (a[i, j] + b[i, j]) % Mod;
+            }
+        }
+        return a;
+    }
+    public static Mat operator -(Mat a, Mat b)
+    {
+        if (a.Size != b.Size) throw new Exception($"行列のサイズが違います。");
+        for (int i = 0; i < a.Size; i++)
+        {
+            for (int j = 0; j < a.Size; j++)
+            {
+                a[i, j] = (a[i, j] - b[i, j] + Mod) % Mod;
+            }
+        }
+        return a;
+    }
+    public static Mat operator *(Mat a, Mat b)
+    {
+        if (a.Size != b.Size) throw new Exception($"行列のサイズが違います。");
+        Mat C = new Mat(a.Size);
+        for (int i = 0; i < a.Size; i++)
+        {
+            for (int k = 0; k < b.Size; k++)
+            {
+                for (int j = 0; j < a.Size; j++)
+                {
+                    C[i, j] = (C[i, j] + a[i, k] * b[k, j]) % Mod;
+                }
+            }
+        }
+        return C;
+    }
+    public static Mat Pow(Mat A, long n)
+    {
+        Mat B = new Mat(A.Size);
+        for (int i = 0; i < A.Size; i++)
+        {
+            B[i, i] = 1;
+        }
+        while (n > 0)
+        {
+            if ((n & 1) == 1) B *= A;
+            A = A * A;
+            n >>= 1;
+        }
+        return B;
+    }
+}
 
 class ZAlgorithm//先頭文字列と何文字一致しているか
 {
