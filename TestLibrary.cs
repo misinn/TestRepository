@@ -2,68 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-static class DebuggingTools
-{
-    public static int Random(int min, int max)
-    {
-        var rand = new Random(DateTime.Now.Millisecond);
-        return rand.Next(min, max);
-    }
-    public static int[] RandomArray(int n, int min, int max)
-    {
-        var ary = new int[n];
-        var rand = new Random(DateTime.Now.Millisecond);
-        for (int i = 0; i < n; i++)
-        {
-            ary[i] = rand.Next(min, max);
-        }
-        return ary;
-    }
-
-}
-
-
-class MyExtention
-{
-    public static long GCD(long a, long b)
-        => a == 0 ? b : GCD(b % a, a);
-    public static long LCM(long a, long b)
-        => a / GCD(a, b) * b;
-
-    public static long ModPow(long a,long n,long Mod) //未テスト　オーバーフローの可能性あり
-    {
-        long ans = 1;
-        while (n > 0)
-        {
-            if (n % 2 == 1)
-                ans = ans * a % Mod;
-            a = a * a % Mod;
-            n /= 2;
-        }
-        return ans;
-    }
-    public static T Max<T>(params T[] nums) where T : IComparable
-    {
-        T max = nums[0];
-        for (int i = 1; i < nums.Length; i++)
-        {
-            if (max.CompareTo(nums[i]) < 0) max = nums[i];
-        }
-        return max;
-    }
-    public static T Min<T>(params T[] nums) where T : IComparable
-    {
-        T min = nums[0];
-        for (int i = 1; i < nums.Length; i++)
-        {
-            if (min.CompareTo(nums[i]) > 0) min = nums[i];
-        }
-        return min;
-    }
-
-
-}
-
 class Scanner
 {
     public static string RString() => Console.ReadLine();
@@ -72,14 +10,19 @@ class Scanner
     public static double RDouble() => ReadTuple<double>();
 
     public static string[] RStrings() => Console.ReadLine().Split();
-    public static int[] RInts() => Array.ConvertAll(Console.ReadLine().Split(), int.Parse);
-    public static long[] RLongs() => Array.ConvertAll(Console.ReadLine().Split(), long.Parse);
-    public static double[] RDoubles() => Array.ConvertAll(Console.ReadLine().Split(), double.Parse);
-    public static int[] RInts(Func<string, int> func) => Console.ReadLine().Split().Select(func).ToArray();
-    public static long[] RLongs(Func<string, long> func) => Console.ReadLine().Split().Select(func).ToArray();
-    public static double[] RDoubles(Func<string, double> func) => Console.ReadLine().Split().Select(func).ToArray();
+    public static int[] RInts() => Array.ConvertAll(RStrings(), int.Parse);
+    public static long[] RLongs() => Array.ConvertAll(RStrings(), long.Parse);
+    public static double[] RDoubles() => Array.ConvertAll(RStrings(), double.Parse);
+    public static int[] RInts(Func<int, int> func) => RInts().Select(func).ToArray();
+    public static long[] RLongs(Func<long, long> func) => RLongs().Select(func).ToArray();
+    public static double[] RDoubles(Func<double, double> func) => RDoubles().Select(func).ToArray();
+    public static int[][] RIntss(int len) => new int[len][].Select(_ => RInts()).ToArray();
+    public static long[][] RLongss(int len) => new long[len][].Select(_ => RLongs()).ToArray();
+    public static double[][] RDoubless(int len) => new double[len][].Select(_ => RDoubles()).ToArray();
+    public static int[][] RIntss(int len, Func<int, int> func) => new int[len][].Select(_ => RInts(func)).ToArray();
+    public static long[][] RLongss(int len, Func<long, long> func) => new long[len][].Select(_ => RLongs(func)).ToArray();
+    public static double[][] RDoubless(int len, Func<double, double> func) => new double[len][].Select(_ => RDoubles(func)).ToArray();
     //public static string[] RStrings(Func<string, string> func) => Console.ReadLine().Split().Select(func).ToArray();
-
     public static T1 ReadTuple<T1>()
     {
         var r = RString();
@@ -110,20 +53,54 @@ class Scanner
         var r4 = (T4)Convert.ChangeType(r[3], typeof(T4));
         return (r1, r2, r3, r4);
     }
+    public static (T1, T2, T3, T4, T5) ReadTuple<T1, T2, T3, T4, T5>()
+    {
+        var r = RStrings();
+        var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
+        var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
+        var r3 = (T3)Convert.ChangeType(r[2], typeof(T3));
+        var r4 = (T4)Convert.ChangeType(r[3], typeof(T4));
+        var r5 = (T5)Convert.ChangeType(r[4], typeof(T5));
+        return (r1, r2, r3, r4, r5);
+    }
 }
 
 
+static class Template
+{
+    public static long GCD(long a, long b)
+        => a == 0 ? b : GCD(b % a, a);
+    public static long LCM(long a, long b)
+        => a / GCD(a, b) * b;
+    public static bool ChMax<T>(ref T a, T b) where T : IComparable<T> { if (a.CompareTo(b) > 0) { a = b; return true; } return false; }
+    public static bool ChMin<T>(ref T a, T b) where T : IComparable<T> { if (a.CompareTo(b) < 0) { a = b; return true; } return false; }
+    public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
+    public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
+    public static T[] Sort<T>(T[] ary) { Array.Sort(ary);return ary; }
+    public static T[] Sort<T>(T[] ary, Comparison<T> comp) { Array.Sort(ary, comp); return ary; }
+    public static T[] Sort<T>(T[] ary, IComparer<T> comp) { Array.Sort(ary, comp); return ary; }
+    public static T[] Reverse<T>(T[] ary) { Array.Reverse(ary); return ary; }
+}
+static class Debug
+{
+    public static Random Rand = new Random(DateTime.Now.Millisecond);
+    public static int RandomInt(int min, int max) => Rand.Next(min, max);
+    public static string RandomString(int min = 4, int max=8) => string.Join("", new char[RandomInt(min, max)].Select(_ => (char)('a' + RandomInt(0, 26))).ToArray());
+    public static int[] RandomArray(int leng, int minvalue, int maxvalue)=>new int[leng].Select(_ => Rand.Next(minvalue, maxvalue)).ToArray();
+    public static int RInt() => RandomInt(1, 10);
+    public static int[] RInts() => RandomArray(10, 0, 10);
+}
+
 class IndexConverter<T> //文字列など 数の順列に変換する。
 {
-    static Dictionary<T, int> itemToIndex = new Dictionary<T, int>();
-    static List<T> indexToItem = new List<T>();
+    Dictionary<T, int> itemToIndex = new Dictionary<T, int>();
+    List<T> indexToItem = new List<T>();
 
     public T GetItem(int i) => indexToItem[i];
     public int GetIndex(T item) => itemToIndex[item];
     public void Add(T item)
     {
         if (itemToIndex.ContainsKey(item)) return;
-
         itemToIndex[item] = itemToIndex.Count;
         indexToItem.Add(item);
     }
@@ -185,7 +162,7 @@ class Graph<T>//有向グラフ
 
 class Graph<T, U> //重み付き有向グラフ
 {
-    private List<(T to, U cost)>[] G;
+    List<(T to, U cost)>[] G;
     public Graph(int size = 200002)
     {
         G = new List<(T to, U cost)>[size];
@@ -522,6 +499,11 @@ class Modular
                         : (Math.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
                             : Fac(n - r + 1, n) / Fac(r);
     }
+    public static Modular Npr(int n, int r)
+    {
+        r = n - r;
+        return Fac(n) / Fac(r);
+    }
     public static explicit operator int(Modular a)
     {
         return (int)a.value;
@@ -737,14 +719,14 @@ class SegTree
 class LazySegment
 {
     int n;
-    int[] Data, Lazy;
+    long[] Data, Lazy;
 
-    public LazySegment(int[] v)
+    public LazySegment(long[] v)
     {
         int N = v.Length;
         n = 1; while (n < N) n *= 2;
-        Data = new int[n * 2 - 1];
-        Lazy = new int[n * 2 - 1];
+        Data = new long[n * 2 - 1];
+        Lazy = new long[n * 2 - 1];
         for (int i = 0; i < N; i++)
         {
             Data[i + n - 1] = v[i];
@@ -753,6 +735,9 @@ class LazySegment
         {
             Data[i] = Data[i * 2 + 1] + Data[i * 2 + 2];
         }
+    }
+    public LazySegment(int size):this(new long[size])
+    {
     }
     void eval(int k, int l, int r)//nodeが呼び出された時に伝達する。
     {
@@ -784,8 +769,9 @@ class LazySegment
             Data[k] = Data[k * 2 + 1] + Data[k * 2 + 1];
         }
     }
-    public int Query(int a, int b) => Query(a, b, 0, 0, n);
-    private int Query(int a, int b, int k, int l, int r)
+    public long Query(int a, int b) => Query(a, b, 0, 0, n);
+    public long Query(int a) => Query(a, a + 1, 0, 0, n);
+    private long Query(int a, int b, int k, int l, int r)
     {
         if (b <= l || r <= a) return 0;
         eval(k, l, r);
