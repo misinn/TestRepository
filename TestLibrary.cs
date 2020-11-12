@@ -64,8 +64,6 @@ class Scanner
         return (r1, r2, r3, r4, r5);
     }
 }
-
-
 static class Template
 {
     public static long GCD(long a, long b)
@@ -669,76 +667,77 @@ class BIT//区間の和をlogNで求める
     }
 }
 
-
-//練習用RMQ
-//これを修正して他のクエリに対応させる
-class SegTree
+//単更新・範囲検索
+/// <summary>
+/// updfunc: UpDate時の木を登るとき区間をとのような値で記録するか？
+/// qfunc: Query時に区間同士比べるときどうするか？
+/// 上の二つは基本同じ式入れてOK...?
+/// </summary>
+class SegTree<T>
 {
     static readonly int MAX_N = 1 << 17;
-    static int n;
-    static int[] dat = new int[2 * MAX_N - 1];
-
-    public SegTree(int N)
+    static int N;
+    static T init;
+    static T[] dat = new T[2 * MAX_N - 1];
+    static Func<T, T, T> updFunc;
+    static Func<T, T, T> qFunc;
+    public SegTree(int n,T _init,Func<T,T,T> updfunc,Func<T,T,T> qfunc)
     {
-        n = 1;
-        while (n <= N) n *= 2;
-        for (int i = 0; i < 2 * n - 1; i++)//初期値
-        {
-            dat[i] = int.MaxValue;
-        }
+        N = 1;
+        while (N <= n) N <<= 1;
+        for (int i = 0; i < 2 * N - 1; i++) dat[i] = _init;
+        updFunc = updfunc;
+        qFunc = qfunc;
+        init = _init;
     }
-    //節ごとにその範囲の答えをいれる。
-    public void Update(int k, int a)
+    public void Update(int k,T a)
     {
-        k += n - 1;
+        k += N - 1;
         dat[k] = a;
         while (k > 0)
         {
             k = (k - 1) / 2;
-            dat[k] = Math.Min(dat[k * 2 + 1], dat[k * 2 + 2]);
+            dat[k] = updFunc(dat[k * 2 + 1], dat[k * 2 + 2]);
         }
     }
-    //[a,b)の最小値を求めるクエリ
-    //[l,r)区間と配列のk番目が対応している。
-    public int Query(int a, int b) => Query(a, b, 0, 0, n);
-    private int Query(int a, int b, int k, int l, int r)
+    //[a, b]を検索
+    public T Query(int a, int b) => Query(a, b, 0, 0, N);
+    private T Query(int a, int b, int k = 0, int l = 0, int r = 0)
     {
-        if (r <= a || b <= l) return int.MaxValue;//範囲が重ならないとき
-        else if (a <= l && r <= b) return dat[k];//範囲が完全に含まれるとき
-        else//どっちかが範囲外の時
+        if (r <= a || b <= l) return init;
+        else if (a <= l && r <= b) return dat[k];
+        else
         {
-            int vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
-            int vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
-            return Math.Min(vl, vr);
+            T vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
+            T vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
+            return qFunc(vl, vr);
         }
     }
 }
 
-//遅延評価セグ木
-//区間加算と区間和の計算 どちらもO(logN)
-class LazySegment
+//遅延評価セグメントツリー  区間加算のみ対応(ModもOK)
+class LazySegTree
 {
     int n;
     long[] Data, Lazy;
-
-    public LazySegment(long[] v)
+    Func<long, long, long> func;
+    public LazySegTree(int[] v, Func<long, long, long> _func)
     {
-        int N = v.Length;
-        n = 1; while (n < N) n *= 2;
+        int size = v.Length;
+        func = _func;
+        n = 1; while (n < size) n <<= 1;
         Data = new long[n * 2 - 1];
         Lazy = new long[n * 2 - 1];
-        for (int i = 0; i < N; i++)
+        for (int i = 0; i < size; i++)
         {
-            Data[i + n - 1] = v[i];
+            Data[i + size - 1] = v[i];
         }
         for (int i = n - 2; i >= 0; i--)//二段目n-1から(一段目は2n-1)
         {
             Data[i] = Data[i * 2 + 1] + Data[i * 2 + 2];
         }
     }
-    public LazySegment(int size):this(new long[size])
-    {
-    }
+    public LazySegTree(int size, Func<long, long, long> _func) : this(new int[size], _func) { }
     void eval(int k, int l, int r)//nodeが呼び出された時に伝達する。
     {
         if (Lazy[k] != 0)
@@ -752,8 +751,9 @@ class LazySegment
         }
         Lazy[k] = 0;
     }
-    public void Update(int a, int b, int x) => Update(a, b, x, 0, 0, n);
-    public void Update(int a, int b, int x, int k, int l, int r)
+    public void Update(int a, long x) => Update(a, a + 1, x, 0, 0, n);
+    public void Update(int a, int b, long x) => Update(a, b, x, 0, 0, n); //[a,b)
+    private void Update(int a, int b, long x, int k, int l, int r)
     {
         eval(k, l, r);
         if (b <= l || r <= a) return;
@@ -766,7 +766,7 @@ class LazySegment
         {
             Update(a, b, x, k * 2 + 1, l, (l + r) / 2);
             Update(a, b, x, k * 2 + 2, (l + r) / 2, r);
-            Data[k] = Data[k * 2 + 1] + Data[k * 2 + 1];
+            Data[k] = Data[k * 2 + 1] + Data[k * 2 + 2];
         }
     }
     public long Query(int a, int b) => Query(a, b, 0, 0, n);
@@ -780,7 +780,86 @@ class LazySegment
         {
             var vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
             var vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
-            return vl + vr;
+            return func(vl, vr);
+        }
+    }
+}
+
+//失敗作。Don't Use↓
+class LazySegTree<T>
+{
+    int N;
+    T init;
+    T[] Data, Lazy;
+    Func<T, T, T> qfunc;
+    Func<T, T, T> ufunc;
+    Func<T, T, T> evalfunc1;
+    Func<T, T, T> evalfunc2;
+    Func<T, int, T> evalfunc3;
+    public LazySegTree(T[] v,T _init, Func<T,T,T> qf,Func<T,T,T> uf,Func<T,T,T> ef1,Func<T,T,T> ef2,Func<T,int,T> ef3)
+    {
+        int _n = v.Length;
+        init = _init;
+        qfunc = qf;
+        ufunc = uf;
+        evalfunc1 = ef1;
+        evalfunc2 = ef2;
+        evalfunc3 = ef3;
+        N = 1; while (N < _n) N *= 2;
+        Data = new T[N * 2 - 1];
+        Lazy = new T[N * 2 - 1];
+        for (int i = 0; i < _n; i++)
+        {
+            Data[i + N - 1] = v[i];
+        }
+        for (int i = N - 2; i >= 0; i--)//二段目n-1から(一段目は2n-1)
+        {
+            Data[i] = uf(Data[i * 2 + 1] , Data[i * 2 + 2]);
+        }
+    }
+    public LazySegTree(int size,T _init, Func<T, T, T> qf, Func<T, T, T> uf, Func<T, T, T> ef1, Func<T, T, T> ef2, Func<T, int, T> ef3)
+        : this(new T[size],_init,qf,uf,ef1,ef2,ef3) { }
+    void eval(int k, int l, int r)//nodeが呼び出された時に伝達する。
+    {
+        Data[k] = evalfunc1(Data[k], Lazy[k]);
+        if (r - l > 1)
+        {
+            Lazy[k * 2 + 1] = evalfunc2(Lazy[k * 2 + 1], Lazy[k]);
+            Lazy[k * 2 + 2] = evalfunc2(Lazy[k * 2 + 2], Lazy[k]);
+        }
+
+        Lazy[k] = init;
+    }
+    public void Update(int a, int x) => Update(a, a + 1, x, 0, 0, N);
+    public void Update(int a, int b, int x) => Update(a, b, x, 0, 0, N); //[a,b)
+    private void Update(int a, int b, int x, int k, int l, int r)
+    {
+        eval(k, l, r);
+        if (b <= l || r <= a) return;
+        if (a <= l && r <= b)//完全にl,rが含まれる
+        {
+            Lazy[k] = evalfunc3(Lazy[k], (r - l) * x);
+            eval(k, l, r);
+        }
+        else//どっちか片方範囲外
+        {
+            Update(a, b, x, k * 2 + 1, l, (l + r) / 2);
+            Update(a, b, x, k * 2 + 2, (l + r) / 2, r);
+            Data[k] =ufunc( Data[k * 2 + 1] , Data[k * 2 + 1]);
+        }
+    }
+    public T Query(int a, int b) => Query(a, b, 0, 0, N);
+    public T Query(int a) => Query(a, a + 1, 0, 0, N);
+    private T Query(int a, int b, int k, int l, int r)
+    {
+        if (b <= l || r <= a) return init;
+        eval(k, l, r);
+        if (a <= l && r <= b) return Data[k];
+        else
+        {
+            var vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
+            var vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
+            return qfunc(vl, vr);
         }
     }
 }
