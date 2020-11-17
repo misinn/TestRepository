@@ -70,14 +70,16 @@ static class Template
         => a == 0 ? b : GCD(b % a, a);
     public static long LCM(long a, long b)
         => a / GCD(a, b) * b;
-    public static bool ChMax<T>(ref T a, T b) where T : IComparable<T> { if (a.CompareTo(b) > 0) { a = b; return true; } return false; }
-    public static bool ChMin<T>(ref T a, T b) where T : IComparable<T> { if (a.CompareTo(b) < 0) { a = b; return true; } return false; }
+    public static bool ChMax<T>(ref this T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) > 0) { a = b; return true; } return false; }
+    public static bool ChMin<T>(ref this T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) < 0) { a = b; return true; } return false; }
     public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
     public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
     public static T[] Sort<T>(T[] ary) { Array.Sort(ary);return ary; }
     public static T[] Sort<T>(T[] ary, Comparison<T> comp) { Array.Sort(ary, comp); return ary; }
     public static T[] Sort<T>(T[] ary, IComparer<T> comp) { Array.Sort(ary, comp); return ary; }
     public static T[] Reverse<T>(T[] ary) { Array.Reverse(ary); return ary; }
+    public static long[] CumulativeSum(int[] ary) { var ans = new long[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
+    public static double[] CumulativeSum(double[] ary) { var ans = new double[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
 }
 static class Debug
 {
@@ -96,84 +98,53 @@ class IndexConverter<T> //文字列など 数の順列に変換する。
 
     public T GetItem(int i) => indexToItem[i];
     public int GetIndex(T item) => itemToIndex[item];
-    public void Add(T item)
+    public int Add(T item)
     {
-        if (itemToIndex.ContainsKey(item)) return;
+        if (itemToIndex.ContainsKey(item)) return -1;
         itemToIndex[item] = itemToIndex.Count;
         indexToItem.Add(item);
+        return GetIndex(item);
     }
 }
 
-class Counter<T> //valueをlongに限定したDictionary キーがない値を参照してもエラーしない 初期化 0
+
+class Counter<TKey, TValue> : Dictionary<TKey, TValue>
 {
-    private Dictionary<T, long> dic;
-    public Counter()
+    new public TValue this[TKey key]
     {
-        dic = new Dictionary<T, long>();
-    }
-    public long this[T item]
-    {
-        set
-        {
-            dic.TryGetValue(item, out long v);
-            dic[item] = value;
-        }
+        set => TryAdd(key, value);
         get
         {
-            dic.TryGetValue(item, out long v);
-            return v;
+            TryGetValue(key, out TValue value);
+            return value;
         }
     }
-    public IEnumerator<KeyValuePair<T, long>> GetEnumerator()
-    {
-        foreach (var item in dic)
-        {
-            yield return item;
-        }
-    }
-    public bool ContainsKey(T item) => dic.ContainsKey(item);
-    public Dictionary<T, long>.KeyCollection Keys => dic.Keys;
-    public Dictionary<T, long>.ValueCollection Values => dic.Values;
 }
 
-
-class Graph<T>//有向グラフ
+// Tは辺に持たせる情報 いらない時はintで
+class Graph<T>
 {
-    protected List<T>[] G;
-    public Graph(int size = 200002)
+    protected List<Edge>[] G;
+    public Graph(int size)
     {
-        
-        G = new List<T>[size];
+        G = new List<Edge>[size];
         for (int i = 0; i < size; i++)
         {
-            G[i] = new List<T>();
+            G[i] = new List<Edge>();
         }
     }
-
-    public List<T> this[int i] => G[i];
-    public void AddEdge(int from, T to) => G[from].Add(to);
-    public List<T>[] ToListArray() => G;
+    public List<Edge> this[int i] => G[i];
+    public void Add(int from, int to, T value) => G[from].Add(new Edge { To = to, Value = value });
+    public void Add(int from, int to) => Add(from, to, default);
+    public void AddBoth(int u, int v, T value) { Add(u, v, value); Add(v, u, value); }
+    public void AddBoth(int u, int v) { Add(u, v); Add(v, u); }
     public int Length => G.Length;
-}
-
-
-
-class Graph<T, U> //重み付き有向グラフ
-{
-    List<(T to, U cost)>[] G;
-    public Graph(int size = 200002)
+    public struct Edge
     {
-        G = new List<(T to, U cost)>[size];
-        for (int i = 0; i < size; i++)
-        {
-            G[i] = new List<(T, U)>();
-        }
+        public int To { get; set; }
+        public T Value { get; set; }
+        public static implicit operator int(Edge edge) => edge.To;
     }
-
-    public List<(T to, U cost)> this[int i] => G[i];
-    public void AddEdge(int from, T to, U cost) => G[from].Add((to, cost));
-    public List<(T to, U cost)>[] ToListArray() => G;
-    public int Length => G.Length;
 }
 
 
@@ -304,7 +275,7 @@ public class PriorityQueue<T>
 
 static class Dijkstraa
 {
-    public static long[] Search(Graph<int, long> G, int sp)
+    public static long[] Search(Graph<long> G, int sp)
     {
         //sp からスタート
         var d = Enumerable.Repeat(long.MaxValue, G.Length).ToArray();
@@ -316,8 +287,10 @@ static class Dijkstraa
             var p = que.Pop();
             int v = p.to;
             if (d[v] < p.cost) continue;
-            foreach (var (to, cost) in G[v])
+            foreach (var edge in G[v])
             {
+                int to = edge.To;
+                long cost = edge.Value;
                 if (d[to] > d[v] + cost)
                 {
                     d[to] = d[v] + cost;
@@ -327,7 +300,7 @@ static class Dijkstraa
         }
         return d;
     }
-    public static long Search(Graph<int, long> G, int sp, int gp)
+    public static long Search(Graph<long> G, int sp, int gp)
         => Search(G, sp)[gp];
 }
 
@@ -396,19 +369,19 @@ static class 半分全列挙
 
 class MinimumSpanningTree
 {
-    private Graph<int, long> MSTree;
+    private Graph<long> MSTree;
     private List<(int u, int v, long cost)> es;
     private int V;
     public long costsum = 0;
-    public MinimumSpanningTree(Graph<int, long> G)
+    public MinimumSpanningTree(Graph<long> G)
     {
         es = new List<(int u, int v, long cost)>();
-        MSTree = new Graph<int, long>(G.Length);
+        MSTree = new Graph<long>(G.Length);
         for (int i = 0; i < G.Length; i++)
         {
             foreach (var j in G[i])
             {
-                es.Add((i, j.to, j.cost));
+                es.Add((i, j.To, j.Value));
             }
         }
         V = G.Length;
@@ -427,14 +400,13 @@ class MinimumSpanningTree
             {
                 union.Unite(e.u, e.v);
                 res += e.cost;
-                MSTree.AddEdge(e.u, e.v, e.cost);
-                MSTree.AddEdge(e.v, e.u, e.cost);
+                MSTree.AddBoth(e.u, e.v, e.cost);
             }
         }
         return res;
     }
 
-    public List<(int to, long cost)> this[int i] => MSTree[i];
+    public List<Graph<long>.Edge> this[int i] => MSTree[i];
 }
 
 
@@ -781,85 +753,6 @@ class LazySegTree
             var vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
             var vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
             return func(vl, vr);
-        }
-    }
-}
-
-//失敗作。Don't Use↓
-class LazySegTree<T>
-{
-    int N;
-    T init;
-    T[] Data, Lazy;
-    Func<T, T, T> qfunc;
-    Func<T, T, T> ufunc;
-    Func<T, T, T> evalfunc1;
-    Func<T, T, T> evalfunc2;
-    Func<T, int, T> evalfunc3;
-    public LazySegTree(T[] v,T _init, Func<T,T,T> qf,Func<T,T,T> uf,Func<T,T,T> ef1,Func<T,T,T> ef2,Func<T,int,T> ef3)
-    {
-        int _n = v.Length;
-        init = _init;
-        qfunc = qf;
-        ufunc = uf;
-        evalfunc1 = ef1;
-        evalfunc2 = ef2;
-        evalfunc3 = ef3;
-        N = 1; while (N < _n) N *= 2;
-        Data = new T[N * 2 - 1];
-        Lazy = new T[N * 2 - 1];
-        for (int i = 0; i < _n; i++)
-        {
-            Data[i + N - 1] = v[i];
-        }
-        for (int i = N - 2; i >= 0; i--)//二段目n-1から(一段目は2n-1)
-        {
-            Data[i] = uf(Data[i * 2 + 1] , Data[i * 2 + 2]);
-        }
-    }
-    public LazySegTree(int size,T _init, Func<T, T, T> qf, Func<T, T, T> uf, Func<T, T, T> ef1, Func<T, T, T> ef2, Func<T, int, T> ef3)
-        : this(new T[size],_init,qf,uf,ef1,ef2,ef3) { }
-    void eval(int k, int l, int r)//nodeが呼び出された時に伝達する。
-    {
-        Data[k] = evalfunc1(Data[k], Lazy[k]);
-        if (r - l > 1)
-        {
-            Lazy[k * 2 + 1] = evalfunc2(Lazy[k * 2 + 1], Lazy[k]);
-            Lazy[k * 2 + 2] = evalfunc2(Lazy[k * 2 + 2], Lazy[k]);
-        }
-
-        Lazy[k] = init;
-    }
-    public void Update(int a, int x) => Update(a, a + 1, x, 0, 0, N);
-    public void Update(int a, int b, int x) => Update(a, b, x, 0, 0, N); //[a,b)
-    private void Update(int a, int b, int x, int k, int l, int r)
-    {
-        eval(k, l, r);
-        if (b <= l || r <= a) return;
-        if (a <= l && r <= b)//完全にl,rが含まれる
-        {
-            Lazy[k] = evalfunc3(Lazy[k], (r - l) * x);
-            eval(k, l, r);
-        }
-        else//どっちか片方範囲外
-        {
-            Update(a, b, x, k * 2 + 1, l, (l + r) / 2);
-            Update(a, b, x, k * 2 + 2, (l + r) / 2, r);
-            Data[k] =ufunc( Data[k * 2 + 1] , Data[k * 2 + 1]);
-        }
-    }
-    public T Query(int a, int b) => Query(a, b, 0, 0, N);
-    public T Query(int a) => Query(a, a + 1, 0, 0, N);
-    private T Query(int a, int b, int k, int l, int r)
-    {
-        if (b <= l || r <= a) return init;
-        eval(k, l, r);
-        if (a <= l && r <= b) return Data[k];
-        else
-        {
-            var vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
-            var vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
-            return qfunc(vl, vr);
         }
     }
 }
