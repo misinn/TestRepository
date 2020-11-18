@@ -8,7 +8,6 @@ class Scanner
     public static int RInt() => ReadTuple<int>();
     public static long RLong() => ReadTuple<long>();
     public static double RDouble() => ReadTuple<double>();
-
     public static string[] RStrings() => Console.ReadLine().Split();
     public static int[] RInts() => Array.ConvertAll(RStrings(), int.Parse);
     public static long[] RLongs() => Array.ConvertAll(RStrings(), long.Parse);
@@ -66,10 +65,8 @@ class Scanner
 }
 static class Template
 {
-    public static long GCD(long a, long b)
-        => a == 0 ? b : GCD(b % a, a);
-    public static long LCM(long a, long b)
-        => a / GCD(a, b) * b;
+    public static long GCD(long a, long b)=> a == 0 ? b : GCD(b % a, a);
+    public static long LCM(long a, long b)=> a / GCD(a, b) * b;
     public static bool ChMax<T>(ref this T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) > 0) { a = b; return true; } return false; }
     public static bool ChMin<T>(ref this T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) < 0) { a = b; return true; } return false; }
     public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
@@ -95,7 +92,6 @@ class IndexConverter<T> //文字列など 数の順列に変換する。
 {
     Dictionary<T, int> itemToIndex = new Dictionary<T, int>();
     List<T> indexToItem = new List<T>();
-
     public T GetItem(int i) => indexToItem[i];
     public int GetIndex(T item) => itemToIndex[item];
     public int Add(T item)
@@ -156,10 +152,8 @@ static class TopologicalSort
         var que = new Queue<int>();
         for (int i = 0; i < Degrees.Length; i++)
         {
-            if (Degrees[i] == 0)
-                que.Enqueue(i);
+            if (Degrees[i] == 0) que.Enqueue(i);
         }
-
         var sorted = new List<int>();
         while (que.Count > 0)
         {
@@ -168,8 +162,7 @@ static class TopologicalSort
             foreach (var i in G[v])
             {
                 Degrees[i]--;
-                if (Degrees[i] == 0)
-                    que.Enqueue(i);
+                if (Degrees[i] == 0) que.Enqueue(i);
             }
         }
         if (Degrees.Length != sorted.Count) return null;
@@ -180,52 +173,71 @@ static class TopologicalSort
 
 public class Union_Find
 {
-    private int[] data;
-    public Union_Find(int size)
-    {
-        data = new int[size];
-        for (int i = 0; i < size; i++) data[i] = -1;
-    }
+    int[] p;
+    public Union_Find(int size) => p = Enumerable.Repeat(-1, size).ToArray();
     public bool Unite(int x, int y)
     {
         x = Root(x);
         y = Root(y);
         if (x != y)
         {
-            if (data[y] < data[x])
-            {
-                var tmp = y;
-                y = x;
-                x = tmp;
-            }
-            data[x] += data[y];
-            data[y] = x;
+            if (p[y] < p[x]) (y, x) = (x, y);
+            p[x] += p[y];
+            p[y] = x;
         }
         return x != y;
     }
     public bool IsSameGroup(int x, int y) => Root(x) == Root(y);
-    public int Root(int x) => data[x] < 0 ? x : data[x] = Root(data[x]);
-    public int getMem(int x) => -data[Root(x)];
+    public int Root(int x) => p[x] < 0 ? x : p[x] = Root(p[x]);
+    public int GetMem(int x) => -p[Root(x)];
 }
 
+//重みつきUnionFind
+public class Union_Find<T>
+{
+    int[] p;
+    T[] data;
+    Func<T, T, T> Merge;
+    public Union_Find(int size,Func<T,T,T> merge, T[] init)
+    {
+        p = Enumerable.Repeat(-1, size).ToArray();
+        data = init;
+        Merge = merge;
+    }
+    public bool Unite(int x,int y)
+    {
+        x = Root(x);
+        y = Root(y);
+        if(x != y)
+        {
+            if (p[y] < p[x]) (y, x) = (x, y);
+            p[x] += p[y];
+            p[y] = x;
+            data[x] = Merge(data[x], data[y]);
+        }
+        return x != y;
+    }
+    public bool IsSameGroup(int x, int y) => Root(x) == Root(y);
+    public int Root(int x) => p[x] < 0 ? x :p[x] = Root(p[x]);
+    public T GetValue(int x) => data[Root(x)];
+    public int GetMem(int x) => -p[Root(x)];
+}
 
 public class PriorityQueue<T>
 {
     public long Size { get; private set; } = 0;
     public long MaxSize { get; private set; } = 0;
     public T[] m_heap;
-    private Comparison<T> Comp = null;
+    Comparison<T> Comp = null;
 
     public PriorityQueue(long maxSize, Comparison<T> comp)
     {
-        if (maxSize <= 0)
-            throw new Exception();
+        if (maxSize <= 0) throw new Exception();
         MaxSize = maxSize;
         m_heap = new T[maxSize];
 
         Comp = comp;
     }
-
     public void Push(T x)
     {
         if (Size == MaxSize)
@@ -235,39 +247,31 @@ public class PriorityQueue<T>
             m_heap = new_heap;
             MaxSize <<= 1;
         }
-
         long i = Size++;
         while (i > 0)
         {
             long p = (i - 1) / 2;
-            if (Comp(m_heap[p], x) <= 0)
-                break;
+            if (Comp(m_heap[p], x) <= 0) break;
             m_heap[i] = m_heap[p];
             i = p;
         }
         m_heap[i] = x;
     }
-
     public T Pop()
     {
-        if (Size == 0)
-            throw new Exception("Queue is empty.");
-
+        if (Size == 0) throw new Exception("Queue is empty.");
         T result = m_heap[0];
         T x = m_heap[--Size];
         long i = 0;
         while (i * 2 + 1 < Size)
         {
             long c1 = i * 2 + 1, c2 = i * 2 + 2;
-            if (c2 < Size && Comp(m_heap[c2], m_heap[c1]) < 0)
-                c1 = c2;
-            if (Comp(m_heap[c1], x) >= 0)
-                break;
+            if (c2 < Size && Comp(m_heap[c2], m_heap[c1]) < 0) c1 = c2;
+            if (Comp(m_heap[c1], x) >= 0) break;
             m_heap[i] = m_heap[c1];
             i = c1;
         }
         m_heap[i] = x;
-
         return result;
     }
 }
@@ -300,8 +304,7 @@ static class Dijkstraa
         }
         return d;
     }
-    public static long Search(Graph<long> G, int sp, int gp)
-        => Search(G, sp)[gp];
+    public static long Search(Graph<long> G, int sp, int gp)=> Search(G, sp)[gp];
 }
 
 
@@ -326,9 +329,7 @@ static class 半分全列挙
             }
             ps.Add((sv, sw));
         }
-
         ps.Sort((x, y) => x.w.CompareTo(y.w));
-
         int m = 1;
         for (int i = 1; i < (1 << n2); i++)
         {
@@ -336,7 +337,6 @@ static class 半分全列挙
                 ps[m++] = ps[i];
         }
         ps.RemoveRange(m, ps.Count - m);
-
         long res = 0; ;
         for (int i = 0; i < (1 << (N - n2)); i++)
         {
@@ -349,7 +349,6 @@ static class 半分全列挙
                     sw += Pairs[n2 + j].w;
                 }
             }
-
             int ub = ps.Count;
             int lb = -1;
             while (ub - lb > 1)
@@ -361,7 +360,6 @@ static class 半分全列挙
             if (lb == -1) continue;
             else res = Math.Max(res, sv + ps[lb].v);
         }
-
         return res;
     }
 }
@@ -387,7 +385,6 @@ class MinimumSpanningTree
         V = G.Length;
         costsum = kruskal();
     }
-
     private long kruskal()
     {
         es.Sort((x, y) => x.cost.CompareTo(y.cost));
@@ -405,16 +402,15 @@ class MinimumSpanningTree
         }
         return res;
     }
-
     public List<Graph<long>.Edge> this[int i] => MSTree[i];
 }
 
 
 class Modular
 {
-    private const int M = 1000000007;
-    private const int arysize = 2000001;
-    private long value;
+    const int M = 1000000007;
+    const int arysize = 2000001;
+    long value;
     public Modular(long value = 0) { this.value = value; }
     public override string ToString(){ return value.ToString(); }
     public static implicit operator Modular(long a)
@@ -422,12 +418,9 @@ class Modular
         var m = a % M;
         return new Modular((m < 0) ? m + M : m);
     }
-    public static Modular operator +(Modular a, Modular b)
-    => a.value + b.value;
-    public static Modular operator -(Modular a, Modular b)
-    => a.value - b.value;
-    public static Modular operator *(Modular a, Modular b)
-    => a.value * b.value;
+    public static Modular operator +(Modular a, Modular b)=> a.value + b.value;
+    public static Modular operator -(Modular a, Modular b)=> a.value - b.value;
+    public static Modular operator *(Modular a, Modular b)=> a.value * b.value;
     public static Modular Pow(Modular a, long n)
     {
         Modular ans = 1;
@@ -441,9 +434,8 @@ class Modular
     {
         return a * Pow(b, M - 2);
     }
-    private static int[] facs = new int[arysize];
-    private static int facscount = -1;
-
+    static int[] facs = new int[arysize];
+    static int facscount = -1;
     public static Modular Fac(int n)   //階乗
     {
         facs[0] = 1;
@@ -482,8 +474,8 @@ class Modular
 
 class Mat
 {
-    private readonly long[][] mat;
-    private static readonly long Mod = 1000000007;
+    long[][] mat;
+    static readonly long Mod = 1000000007;
     public Mat(int _size)
     {
         Size = _size;
@@ -564,8 +556,8 @@ class Mat
 
 class ZAlgorithm//先頭文字列と何文字一致しているか
 {
-    private static string S;
-    private int[] Same;
+    static string S;
+    int[] Same;
     public ZAlgorithm(string s)
     {
         S = s;
@@ -605,14 +597,13 @@ class ZAlgorithm//先頭文字列と何文字一致しているか
 
 class BIT//区間の和をlogNで求める
 {
-    private int[] bit;
-    private int N;
+    int[] bit;
+    int N;
     public BIT(int n)
     {
         bit = new int[n + 1];
         N = n;
     }
-
     public int Sum(int i)//[0,i)
     {
         int s = 0;
