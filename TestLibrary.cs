@@ -63,14 +63,15 @@ class Scanner
         return (r1, r2, r3, r4, r5);
     }
 }
-static class Template
+class Template
 {
     public static long GCD(long a, long b)=> a == 0 ? b : GCD(b % a, a);
     public static long LCM(long a, long b)=> a / GCD(a, b) * b;
-    public static bool ChMax<T>(ref this T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) > 0) { a = b; return true; } return false; }
-    public static bool ChMin<T>(ref this T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) < 0) { a = b; return true; } return false; }
+    public static bool ChMax<T>(ref T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) > 0) { a = b; return true; } return false; }
+    public static bool ChMin<T>(ref T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) < 0) { a = b; return true; } return false; }
     public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
     public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
+    public static void Copy<T>(T[] source, T[] destination) { Array.Copy(source, destination, source.Length); }
     public static T[] Sort<T>(T[] ary) { Array.Sort(ary);return ary; }
     public static T[] Sort<T>(T[] ary, Comparison<T> comp) { Array.Sort(ary, comp); return ary; }
     public static T[] Sort<T>(T[] ary, IComparer<T> comp) { Array.Sort(ary, comp); return ary; }
@@ -78,6 +79,7 @@ static class Template
     public static long[] CumulativeSum(int[] ary) { var ans = new long[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
     public static double[] CumulativeSum(double[] ary) { var ans = new double[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
 }
+
 static class Debug
 {
     public static Random Rand = new Random(DateTime.Now.Millisecond);
@@ -102,7 +104,6 @@ class IndexConverter<T> //文字列など 数の順列に変換する。
         return GetIndex(item);
     }
 }
-
 
 class Counter<TKey, TValue> : Dictionary<TKey, TValue>
 {
@@ -130,13 +131,14 @@ class Graph<T>
         }
     }
     public List<Edge> this[int i] => G[i];
-    public void Add(int from, int to, T value) => G[from].Add(new Edge { To = to, Value = value });
+    public void Add(int from, int to, T value) => G[from].Add(new Edge {From = from, To = to, Value = value });
     public void Add(int from, int to) => Add(from, to, default);
     public void AddBoth(int u, int v, T value) { Add(u, v, value); Add(v, u, value); }
     public void AddBoth(int u, int v) { Add(u, v); Add(v, u); }
     public int Length => G.Length;
     public struct Edge
     {
+        public int From { get; set; }
         public int To { get; set; }
         public T Value { get; set; }
         public static implicit operator int(Edge edge) => edge.To;
@@ -229,7 +231,6 @@ public class PriorityQueue<T>
     public long MaxSize { get; private set; } = 0;
     public T[] m_heap;
     Comparison<T> Comp = null;
-
     public PriorityQueue(long maxSize, Comparison<T> comp)
     {
         if (maxSize <= 0) throw new Exception();
@@ -277,14 +278,13 @@ public class PriorityQueue<T>
 }
 
 
-static class Dijkstraa
+class Dijkstraa //spからある地点までの最小コスト
 {
-    public static long[] Search(Graph<long> G, int sp)
+    public static long[] Search(Graph<long> G, int sp,Comparison<(int to,long cost)> comp) //costで比較すればいい
     {
-        //sp からスタート
         var d = Enumerable.Repeat(long.MaxValue, G.Length).ToArray();
+        var que = new PriorityQueue<(int to, long cost)>(500000, comp);
         d[sp] = 0;
-        var que = new PriorityQueue<(int to, long cost)>(500000, (x, y) => x.cost.CompareTo(y.cost));
         que.Push((sp, 0));
         while (que.Size > 0)
         {
@@ -304,13 +304,15 @@ static class Dijkstraa
         }
         return d;
     }
+    public static long[] Search(Graph<long> G, int sp) => Search(G, sp, (x, y) => x.cost.CompareTo(y.cost));
     public static long Search(Graph<long> G, int sp, int gp)=> Search(G, sp)[gp];
+    public static long Search(Graph<long> G, int sp, int gp, Comparison<(int to,long cost)> comp) => Search(G, sp, comp)[gp];
 }
 
 
-static class 半分全列挙
+static class HalfFullEnumeration
 {
-    public static long HalfFullEnumeration((long v, long w)[] Pairs, long W)
+    public static long halfFullEnumeration((long v, long w)[] Pairs, long W)
     {
         int N = Pairs.Length;
         int n2 = N / 2;
@@ -364,45 +366,44 @@ static class 半分全列挙
     }
 }
 
-
-class MinimumSpanningTree
+class MinimumSpanningTree //無向グラフのみ
 {
-    private Graph<long> MSTree;
-    private List<(int u, int v, long cost)> es;
-    private int V;
-    public long costsum = 0;
+    Graph<long> MSTree;
+    List<Graph<long>.Edge> edges;
+    int V;
+    long costsum = 0;
     public MinimumSpanningTree(Graph<long> G)
     {
-        es = new List<(int u, int v, long cost)>();
+        edges = new List<Graph<long>.Edge>();
         MSTree = new Graph<long>(G.Length);
         for (int i = 0; i < G.Length; i++)
         {
-            foreach (var j in G[i])
+            foreach (Graph<long>.Edge edge in G[i])
             {
-                es.Add((i, j.To, j.Value));
+                edges.Add(edge);
             }
         }
         V = G.Length;
-        costsum = kruskal();
+        costsum = Kruskal();
     }
-    private long kruskal()
+    private long Kruskal()
     {
-        es.Sort((x, y) => x.cost.CompareTo(y.cost));
+        edges.Sort((x, y) => x.Value.CompareTo(y.Value));
         var union = new Union_Find(V);
         long res = 0;
-        for (int i = 0; i < es.Count; i++)
+        for (int i = 0; i < edges.Count; i++)
         {
-            var e = es[i];
-            if (!union.IsSameGroup(e.u, e.v))
-            {
-                union.Unite(e.u, e.v);
-                res += e.cost;
-                MSTree.AddBoth(e.u, e.v, e.cost);
-            }
+            var e = edges[i];
+            if (union.IsSameGroup(e.From, e.To)) continue;
+            union.Unite(e.From, e.To);
+            res += e.Value;
+            MSTree.AddBoth(e.From, e.To, e.Value);
         }
         return res;
     }
     public List<Graph<long>.Edge> this[int i] => MSTree[i];
+    public Graph<long> Graph => MSTree;
+    public long CostSum() => costsum;
 }
 
 
@@ -421,6 +422,7 @@ class Modular
     public static Modular operator +(Modular a, Modular b)=> a.value + b.value;
     public static Modular operator -(Modular a, Modular b)=> a.value - b.value;
     public static Modular operator *(Modular a, Modular b)=> a.value * b.value;
+    public static Modular operator /(Modular a, Modular b)=> a * Pow(b, M - 2);
     public static Modular Pow(Modular a, long n)
     {
         Modular ans = 1;
@@ -429,10 +431,6 @@ class Modular
             if ((n & 1) == 1) ans *= a;
         }
         return ans;
-    }
-    public static Modular operator /(Modular a, Modular b)
-    {
-        return a * Pow(b, M - 2);
     }
     static int[] facs = new int[arysize];
     static int facscount = -1;
@@ -463,8 +461,7 @@ class Modular
     }
     public static Modular Npr(int n, int r)
     {
-        r = n - r;
-        return Fac(n) / Fac(r);
+        return Fac(n) / Fac(n - r);
     }
     public static explicit operator int(Modular a)
     {
@@ -472,34 +469,30 @@ class Modular
     }
 }
 
-class Mat
+class Mat //正方行列
 {
-    long[][] mat;
+    long[,] mat;
     static readonly long Mod = 1000000007;
     public Mat(int _size)
     {
         Size = _size;
-        mat = new long[Size][];
-        for (int i = 0; i < Size; i++)
-        {
-            mat[i] = new long[Size];
-        }
+        mat = new long[Size, Size];
+    }
+    public Mat(int[,] _mat)
+    {
+        Size = _mat.Length;
+        mat = new long[Size, Size];
+        Array.Copy(_mat, mat, Size * Size);
     }
     public int Size { get; }
     public long this[int i, int j]
     {
-        set
-        {
-            mat[i][j] = value;
-        }
-        get
-        {
-            return mat[i][j];
-        }
+        set => mat[i,j] = value;
+        get => mat[i, j];
     }
     public static Mat operator +(Mat a, Mat b)
     {
-        if (a.Size != b.Size) throw new Exception($"行列のサイズが違います。");
+        if (a.Size != b.Size) throw new Exception($"ex at'+' a.size={a.Size} b.size={b.Size}");
         for (int i = 0; i < a.Size; i++)
         {
             for (int j = 0; j < a.Size; j++)
@@ -511,7 +504,7 @@ class Mat
     }
     public static Mat operator -(Mat a, Mat b)
     {
-        if (a.Size != b.Size) throw new Exception($"行列のサイズが違います。");
+        if (a.Size != b.Size) throw new Exception($"ex at'-' a.size={a.Size} b.size={b.Size}");
         for (int i = 0; i < a.Size; i++)
         {
             for (int j = 0; j < a.Size; j++)
@@ -523,8 +516,8 @@ class Mat
     }
     public static Mat operator *(Mat a, Mat b)
     {
-        if (a.Size != b.Size) throw new Exception($"行列のサイズが違います。");
-        Mat C = new Mat(a.Size);
+        if (a.Size != b.Size) throw new Exception($"ex at'*' a.size={a.Size} b.size={b.Size}");
+        var C = new Mat(a.Size);
         for (int i = 0; i < a.Size; i++)
         {
             for (int k = 0; k < b.Size; k++)
@@ -533,6 +526,18 @@ class Mat
                 {
                     C[i, j] = (C[i, j] + a[i, k] * b[k, j]) % Mod;
                 }
+            }
+        }
+        return C;
+    }
+    public static Mat operator *(Mat a,long b)
+    {
+        var C = new Mat(a.Size);
+        for (int i = 0; i < a.Size; i++)
+        {
+            for (int j = 0; j < a.Size; j++)
+            {
+                C[i, j] = a[i, j] * b % Mod;
             }
         }
         return C;
@@ -590,7 +595,6 @@ class ZAlgorithm//先頭文字列と何文字一致しているか
         Z[0] = N;
         return Z;
     }
-
     public int this[int i] => Same[i];
 }
 
