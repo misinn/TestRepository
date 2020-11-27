@@ -407,7 +407,7 @@ class MinimumSpanningTree //無向グラフのみ
 }
 
 
-class Modular
+struct Modular
 {
     const int M = 1000000007;
     const int arysize = 2000001;
@@ -437,9 +437,9 @@ class Modular
     public static Modular Fac(int n)   //階乗
     {
         facs[0] = 1;
-        while (++facscount <= n)
+        while (facscount <= n)
         {
-            facs[facscount + 1] = (int)(Math.BigMul(facs[facscount], facscount + 1) % M);
+            facs[++facscount + 1] = (int)(Math.BigMul(facs[facscount], facscount + 1) % M);
         }
         return facs[n];
     }
