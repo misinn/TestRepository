@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 class Scanner
 {
@@ -21,7 +22,40 @@ class Scanner
     public static int[][] RIntss(int len, Func<int, int> func) => new int[len][].Select(_ => RInts(func)).ToArray();
     public static long[][] RLongss(int len, Func<long, long> func) => new long[len][].Select(_ => RLongs(func)).ToArray();
     public static double[][] RDoubless(int len, Func<double, double> func) => new double[len][].Select(_ => RDoubles(func)).ToArray();
-    //public static string[] RStrings(Func<string, string> func) => Console.ReadLine().Split().Select(func).ToArray();
+    public static T[,] R2DSplits<T>(int H, int W, Func<T, T> func = null, Action<int, int, string> action = null) //空白つなぎの入力
+    {
+        func ??= (_ => _);
+        var ary = new T[H, W];
+        for (int h = 0; h < H; h++)
+        {
+            var str = RStrings();
+            for (int w = 0; w < W; w++)
+            {
+                ary[h, w] = func(ChangeType<T>(str[w]));
+                action?.Invoke(h, w, str[w]);
+            }
+        }
+        return ary;
+    }
+    public static T[,] R2DStrings<T>(int H, int W, Func<char, T> func, Action<int, int, char> action = null) //文字列の入力
+    {
+        var ary = new T[H, W];
+        for (int h = 0; h < H; h++)
+        {
+            var str = RString();
+            for (int w = 0; w < W; w++)
+            {
+                ary[h, w] = func(str[w]);
+                action?.Invoke(h, w, str[w]);
+            }
+        }
+        return ary;
+    }
+    public static int[,] RInt2D(int H, int W, Func<int, int> func = null, Action<int, int, string> action = null) => R2DSplits(H, W, func, action);
+    public static long[,] RLong2D(int H, int W, Func<long, long> func = null, Action<int, int, string> action = null) => R2DSplits(H, W, func, action);
+    public static double[,] RDouble2D(int H, int W, Func<double, double> func = null, Action<int, int, string> action = null) => R2DSplits(H, W, func, action);
+    public static bool[,] RBool2D(int H, int W, Func<char, bool> func, Action<int, int, char> action = null) => R2DStrings(H, W, func, action);
+    private static T ChangeType<T>(string r) => (T)Convert.ChangeType(r, typeof(T));
     public static T1 ReadTuple<T1>()
     {
         var r = RString();
@@ -78,9 +112,12 @@ class Template
     public static T[] Reverse<T>(T[] ary) { Array.Reverse(ary); return ary; }
     public static long[] CumulativeSum(int[] ary) { var ans = new long[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
     public static double[] CumulativeSum(double[] ary) { var ans = new double[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
+    public static void Fill<T>(T[] ary, T init) => Array.Fill(ary, init);
+    public static void Fill<T>(T[,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0], ary.Length).Fill(init);
+    public static void Fill<T>(T[,,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0, 0], ary.Length).Fill(init);
 }
 
-static class Debug
+static class Debug //"using staticを置き換えることで入力をランダムにする" ことが目標
 {
     public static Random Rand = new Random(DateTime.Now.Millisecond);
     public static int RandomInt(int min, int max) => Rand.Next(min, max);
@@ -138,9 +175,8 @@ class Graph<T>
     public int Length => G.Length;
     public struct Edge
     {
-        public int From { get; set; }
-        public int To { get; set; }
-        public T Value { get; set; }
+        public int From, To;
+        public T Value;
         public static implicit operator int(Edge edge) => edge.To;
     }
 }
@@ -194,7 +230,7 @@ public class Union_Find
     public int GetMem(int x) => -p[Root(x)];
 }
 
-//重みつきUnionFind
+//重みつきUF
 public class Union_Find<T>
 {
     int[] p;
@@ -751,3 +787,25 @@ class LazySegTree
         }
     }
 }
+
+/// <summary>
+/// ビットDPのサンプル
+/// bitをテーブルにのせてDPするだけ(メモ化再帰)
+/// n:地点数    d:距離行列
+/// S:訪れた地点 v:現在地点
+/// </summary>
+
+//static int rec(int S, int v)
+//{
+//    if (dp[S, v] >= 0) return dp[S, v]; //更新されている=この地点からの最小は求まっている
+//    if (S == (1 << n) - 1 && v == 0) return dp[S, v] = 0;
+//    int res = int.MaxValue / 4;
+//    for (int u = 0; u < n; u++)
+//    {
+//        if ((S & (1 << u)) == 0)
+//        {
+//            res = Min(res, rec(S | (1 << u), u) + d[v, u]);
+//        }
+//    }
+//    return dp[S, v] = res;
+//}
