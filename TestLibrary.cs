@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-
+using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 class Scanner
 {
+    
     public static string RString() => Console.ReadLine();
     public static int RInt() => ReadTuple<int>();
     public static long RLong() => ReadTuple<long>();
@@ -37,7 +37,7 @@ class Scanner
         }
         return ary;
     }
-    public static T[,] R2DStrings<T>(int H, int W, Func<char, T> func, Action<int, int, char> action = null) //文字列の入力
+    public static T[,] R2DJoineds<T>(int H, int W, Func<char, T> func, Action<int, int, char> action = null) //文字列の入力
     {
         var ary = new T[H, W];
         for (int h = 0; h < H; h++)
@@ -54,7 +54,7 @@ class Scanner
     public static int[,] RInt2D(int H, int W, Func<int, int> func = null, Action<int, int, string> action = null) => R2DSplits(H, W, func, action);
     public static long[,] RLong2D(int H, int W, Func<long, long> func = null, Action<int, int, string> action = null) => R2DSplits(H, W, func, action);
     public static double[,] RDouble2D(int H, int W, Func<double, double> func = null, Action<int, int, string> action = null) => R2DSplits(H, W, func, action);
-    public static bool[,] RBool2D(int H, int W, Func<char, bool> func, Action<int, int, char> action = null) => R2DStrings(H, W, func, action);
+    public static bool[,] RBool2D(int H, int W, Func<char, bool> func, Action<int, int, char> action = null) => R2DJoineds(H, W, func, action);
     private static T ChangeType<T>(string r) => (T)Convert.ChangeType(r, typeof(T));
     public static T1 ReadTuple<T1>()
     {
@@ -96,6 +96,42 @@ class Scanner
         var r5 = (T5)Convert.ChangeType(r[4], typeof(T5));
         return (r1, r2, r3, r4, r5);
     }
+    public static T1[] ReadTuples<T1>(int N) //N行の入力 => T[N]出力
+    {
+        var res = new T1[N];
+        for (int i = 0; i < N; i++)
+        {
+            res[i] = ChangeType<T1>(RString());
+        }
+        return res;
+    }
+    public static (T1[], T2[]) ReadTuples<T1, T2>(int N) //N行入力 => (T1[],T2[])
+    {
+        var (r1, r2) = (new T1[N], new T2[N]);
+        for (int i = 0; i < N; i++)
+        {
+            (r1[i], r2[i]) = ReadTuple<T1, T2>();
+        }
+        return (r1, r2);
+    }
+    public static (T1[], T2[], T3[]) ReadTuples<T1, T2, T3>(int N)
+    {
+        var (r1, r2, r3) = (new T1[N], new T2[N], new T3[N]);
+        for (int i = 0; i < N; i++)
+        {
+            (r1[i], r2[i], r3[i]) = ReadTuple<T1, T2, T3>();
+        }
+        return (r1, r2, r3);
+    }
+    public static (T1[], T2[], T3[], T4[]) ReadTuples<T1, T2, T3, T4>(int N)
+    {
+        var (r1, r2, r3, r4) = (new T1[N], new T2[N], new T3[N], new T4[N]);
+        for (int i = 0; i < N; i++)
+        {
+            (r1[i], r2[i], r3[i], r4[i]) = ReadTuple<T1, T2, T3, T4>();
+        }
+        return (r1, r2, r3, r4);
+    }
 }
 class Template
 {
@@ -105,16 +141,19 @@ class Template
     public static bool ChMin<T>(ref T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) < 0) { a = b; return true; } return false; }
     public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
     public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
-    public static void Copy<T>(T[] source, T[] destination) { Array.Copy(source, destination, source.Length); }
+    public static void Copy<T>(T[] source, T[] destination) => Array.Copy(source, destination, source.Length); 
+    public static void Fill<T>(T[] ary, T init) => ary.AsSpan().Fill(init); 
+    public static void Fill<T>(T[,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0], ary.Length).Fill(init);
+    public static void Fill<T>(T[,,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0, 0], ary.Length).Fill(init);
     public static T[] Sort<T>(T[] ary) { Array.Sort(ary);return ary; }
     public static T[] Sort<T>(T[] ary, Comparison<T> comp) { Array.Sort(ary, comp); return ary; }
     public static T[] Sort<T>(T[] ary, IComparer<T> comp) { Array.Sort(ary, comp); return ary; }
     public static T[] Reverse<T>(T[] ary) { Array.Reverse(ary); return ary; }
     public static long[] CumulativeSum(int[] ary) { var ans = new long[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
     public static double[] CumulativeSum(double[] ary) { var ans = new double[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
-    public static void Fill<T>(T[] ary, T init) => Array.Fill(ary, init);
-    public static void Fill<T>(T[,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0], ary.Length).Fill(init);
-    public static void Fill<T>(T[,,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0, 0], ary.Length).Fill(init);
+    public static string Join<T>(T[] ary, char separater = ' ') => string.Join(separater, ary);
+    public static string Join<T>(T[] ary, string separater = " ") => string.Join(separater, ary);
+    public static void WriteLine<T>(T str) { Console.WriteLine(str.ToString()); }
 }
 
 static class Debug //"using staticを置き換えることで入力をランダムにする" ことが目標
@@ -127,31 +166,29 @@ static class Debug //"using staticを置き換えることで入力をランダ�
     public static int[] RInts() => RandomArray(10, 0, 10);
 }
 
+
 class IndexConverter<T> //文字列など 数の順列に変換する。
 {
     Dictionary<T, int> itemToIndex = new Dictionary<T, int>();
     List<T> indexToItem = new List<T>();
-    public T GetItem(int i) => indexToItem[i];
-    public int GetIndex(T item) => itemToIndex[item];
     public int Add(T item)
     {
         if (itemToIndex.ContainsKey(item)) return -1;
-        itemToIndex[item] = itemToIndex.Count;
         indexToItem.Add(item);
-        return GetIndex(item);
+        return itemToIndex[item] = itemToIndex.Count;
     }
+    public int IndexOf(T item) => itemToIndex[item];
+    public T this[int index] => indexToItem[index];
+    public int Count => itemToIndex.Count;
 }
 
-class Counter<TKey, TValue> : Dictionary<TKey, TValue>
+
+class Counter<TKey, TValue> : Dictionary<TKey, TValue> //Dictionary
 {
     new public TValue this[TKey key]
     {
-        set => TryAdd(key, value);
-        get
-        {
-            TryGetValue(key, out TValue value);
-            return value;
-        }
+        set => base[key] = value;
+        get => TryGetValue(key, out TValue value) ? value : default;
     }
 }
 
@@ -161,17 +198,11 @@ class Graph<T>
     protected List<Edge>[] G;
     public Graph(int size)
     {
-        G = new List<Edge>[size];
-        for (int i = 0; i < size; i++)
-        {
-            G[i] = new List<Edge>();
-        }
+        G = new List<Edge>[size].Select(_ => new List<Edge>()).ToArray();
     }
     public List<Edge> this[int i] => G[i];
-    public void Add(int from, int to, T value) => G[from].Add(new Edge {From = from, To = to, Value = value });
-    public void Add(int from, int to) => Add(from, to, default);
-    public void AddBoth(int u, int v, T value) { Add(u, v, value); Add(v, u, value); }
-    public void AddBoth(int u, int v) { Add(u, v); Add(v, u); }
+    public void Add(int from, int to, T value = default) => G[from].Add(new Edge { From = from, To = to, Value = value });
+    public void AddBoth(int u, int v, T value = default) { Add(u, v, value); Add(v, u, value); }
     public int Length => G.Length;
     public struct Edge
     {
@@ -182,37 +213,11 @@ class Graph<T>
 }
 
 
-static class TopologicalSort
-{
-    //Degreesはその頂点にのびる辺の数 無理ならnullを返す
-    static List<int> Topologicalsort(Graph<int> G, int[] Degrees)
-    {
-        var que = new Queue<int>();
-        for (int i = 0; i < Degrees.Length; i++)
-        {
-            if (Degrees[i] == 0) que.Enqueue(i);
-        }
-        var sorted = new List<int>();
-        while (que.Count > 0)
-        {
-            var v = que.Dequeue();
-            sorted.Add(v);
-            foreach (var i in G[v])
-            {
-                Degrees[i]--;
-                if (Degrees[i] == 0) que.Enqueue(i);
-            }
-        }
-        if (Degrees.Length != sorted.Count) return null;
-        return sorted;
-    }
-}
 
-
-public class Union_Find
+public class UnionFind
 {
     int[] p;
-    public Union_Find(int size) => p = Enumerable.Repeat(-1, size).ToArray();
+    public UnionFind(int size) => p = Enumerable.Repeat(-1, size).ToArray();
     public bool Unite(int x, int y)
     {
         x = Root(x);
@@ -230,23 +235,25 @@ public class Union_Find
     public int GetMem(int x) => -p[Root(x)];
 }
 
-//重みつきUF
+
+//親にマージした値がのる。
 public class Union_Find<T>
 {
     int[] p;
     T[] data;
     Func<T, T, T> Merge;
-    public Union_Find(int size,Func<T,T,T> merge, T[] init)
+    public Union_Find(int size, Func<T, T, T> merge, T[] init)
     {
         p = Enumerable.Repeat(-1, size).ToArray();
         data = init;
         Merge = merge;
     }
-    public bool Unite(int x,int y)
+    public Union_Find(int size) : this(size, (a, b) => default, new T[size]) { }
+    public bool Unite(int x, int y)
     {
         x = Root(x);
         y = Root(y);
-        if(x != y)
+        if (x != y)
         {
             if (p[y] < p[x]) (y, x) = (x, y);
             p[x] += p[y];
@@ -256,10 +263,59 @@ public class Union_Find<T>
         return x != y;
     }
     public bool IsSameGroup(int x, int y) => Root(x) == Root(y);
-    public int Root(int x) => p[x] < 0 ? x :p[x] = Root(p[x]);
-    public T GetValue(int x) => data[Root(x)];
+    public int Root(int x) => p[x] < 0 ? x : p[x] = Root(p[x]);
+    public T this[int x] => data[Root(x)]; //親の値
     public int GetMem(int x) => -p[Root(x)];
 }
+
+
+//重みつきUF 重みはlongのみ対応
+public class WeightedUnionFind
+{
+    int[] p, rank;
+    long[] dW;
+    public WeightedUnionFind(int N)
+    {
+        p = Enumerable.Repeat(-1, N).ToArray();
+        rank = new int[N];
+        dW = new long[N];
+    }
+    public bool Merge(int x, int y, long diff)
+    {
+        diff += Weight(x) - Weight(y);
+        x = Root(x);
+        y = Root(y);
+        if (x != y)
+        {
+            if (rank[x] < rank[y])
+            {
+                (x, y) = (y, x);
+                diff = -diff;
+            }
+            p[x] += p[y];
+            p[y] = x;
+            dW[y] += diff;
+            if (rank[x] == rank[y]) rank[x]++;
+        }
+        return x != y;
+    }
+    int Root(int x) //親から順に重さを更新
+    {
+        if (p[x] < 0) return x;
+        int root = Root(p[x]);
+        dW[x] += dW[p[x]];
+        return p[x] = root;
+    }
+    public long Weight(int x)
+    {
+        Root(x);
+        return dW[x];
+    }
+    public bool IsSame(int x, int y) => Root(x) == Root(y);
+    public long GetDiff(int x, int y) => Weight(y) - Weight(x);
+    public int GetMem(int x) => -p[Root(x)];
+}
+
 
 public class PriorityQueue<T>
 {
@@ -318,7 +374,7 @@ class Dijkstraa //spからある地点までの最小コスト
 {
     public static long[] Search(Graph<long> G, int sp,Comparison<(int to,long cost)> comp) //costで比較すればいい
     {
-        var d = Enumerable.Repeat(long.MaxValue, G.Length).ToArray();
+        var d = Enumerable.Repeat(long.MaxValue/4, G.Length).ToArray();
         var que = new PriorityQueue<(int to, long cost)>(500000, comp);
         d[sp] = 0;
         que.Push((sp, 0));
@@ -346,70 +402,15 @@ class Dijkstraa //spからある地点までの最小コスト
 }
 
 
-static class HalfFullEnumeration
-{
-    public static long halfFullEnumeration((long v, long w)[] Pairs, long W)
-    {
-        int N = Pairs.Length;
-        int n2 = N / 2;
-        var ps = new List<(long v, long w)>(1 << n2);
-
-        for (int i = 0; i < (1 << n2); i++)
-        {
-            long sv = 0, sw = 0;
-            for (int j = 0; j < n2; j++)
-            {
-                if ((i & (1 << j)) > 0)
-                {
-                    sv += Pairs[j].v;
-                    sw += Pairs[j].w;
-                }
-            }
-            ps.Add((sv, sw));
-        }
-        ps.Sort((x, y) => x.w.CompareTo(y.w));
-        int m = 1;
-        for (int i = 1; i < (1 << n2); i++)
-        {
-            if (ps[m - 1].v < ps[i].v)
-                ps[m++] = ps[i];
-        }
-        ps.RemoveRange(m, ps.Count - m);
-        long res = 0; ;
-        for (int i = 0; i < (1 << (N - n2)); i++)
-        {
-            long sv = 0, sw = 0;
-            for (int j = 0; j < (N - n2); j++)
-            {
-                if ((i & (1 << j)) > 0)
-                {
-                    sv += Pairs[n2 + j].v;
-                    sw += Pairs[n2 + j].w;
-                }
-            }
-            int ub = ps.Count;
-            int lb = -1;
-            while (ub - lb > 1)
-            {
-                int mid = (ub + lb) / 2;
-                if (sw + ps[mid].w > W) ub = mid;
-                else lb = mid;
-            }
-            if (lb == -1) continue;
-            else res = Math.Max(res, sv + ps[lb].v);
-        }
-        return res;
-    }
-}
-
 class MinimumSpanningTree //無向グラフのみ
 {
     Graph<long> MSTree;
     List<Graph<long>.Edge> edges;
     int V;
-    long costsum = 0;
-    public MinimumSpanningTree(Graph<long> G)
+    public long CostSum { get; private set; } = 0;
+    public MinimumSpanningTree(Graph<long> G,Comparison<Graph<long>.Edge> comp = null)
     {
+        comp ??= (a, b) => a.Value.CompareTo(b.Value);
         edges = new List<Graph<long>.Edge>();
         MSTree = new Graph<long>(G.Length);
         for (int i = 0; i < G.Length; i++)
@@ -420,12 +421,12 @@ class MinimumSpanningTree //無向グラフのみ
             }
         }
         V = G.Length;
-        costsum = Kruskal();
+        CostSum = Kruskal(comp);
     }
-    private long Kruskal()
+    private long Kruskal(Comparison<Graph<long>.Edge> comp)
     {
-        edges.Sort((x, y) => x.Value.CompareTo(y.Value));
-        var union = new Union_Find(V);
+        edges.Sort(comp);
+        var union = new UnionFind(V);
         long res = 0;
         for (int i = 0; i < edges.Count; i++)
         {
@@ -439,7 +440,6 @@ class MinimumSpanningTree //無向グラフのみ
     }
     public List<Graph<long>.Edge> this[int i] => MSTree[i];
     public Graph<long> Graph => MSTree;
-    public long CostSum() => costsum;
 }
 
 
@@ -595,6 +595,88 @@ class Mat //正方行列
     }
 }
 
+static class HalfFullEnumeration
+{
+    public static long halfFullEnumeration((long v, long w)[] Pairs, long W)
+    {
+        int N = Pairs.Length;
+        int n2 = N / 2;
+        var ps = new List<(long v, long w)>(1 << n2);
+
+        for (int i = 0; i < (1 << n2); i++)
+        {
+            long sv = 0, sw = 0;
+            for (int j = 0; j < n2; j++)
+            {
+                if ((i & (1 << j)) > 0)
+                {
+                    sv += Pairs[j].v;
+                    sw += Pairs[j].w;
+                }
+            }
+            ps.Add((sv, sw));
+        }
+        ps.Sort((x, y) => x.w.CompareTo(y.w));
+        int m = 1;
+        for (int i = 1; i < (1 << n2); i++)
+        {
+            if (ps[m - 1].v < ps[i].v)
+                ps[m++] = ps[i];
+        }
+        ps.RemoveRange(m, ps.Count - m);
+        long res = 0; ;
+        for (int i = 0; i < (1 << (N - n2)); i++)
+        {
+            long sv = 0, sw = 0;
+            for (int j = 0; j < (N - n2); j++)
+            {
+                if ((i & (1 << j)) > 0)
+                {
+                    sv += Pairs[n2 + j].v;
+                    sw += Pairs[n2 + j].w;
+                }
+            }
+            int ub = ps.Count;
+            int lb = -1;
+            while (ub - lb > 1)
+            {
+                int mid = (ub + lb) / 2;
+                if (sw + ps[mid].w > W) ub = mid;
+                else lb = mid;
+            }
+            if (lb == -1) continue;
+            else res = Math.Max(res, sv + ps[lb].v);
+        }
+        return res;
+    }
+}
+
+static class TopologicalSort
+{
+    //Degreesはその頂点にのびる辺の数 無理ならnullを返す
+    public static List<int> Topologicalsort(Graph<int> G, int[] Degrees)
+    {
+        var que = new Queue<int>();
+        for (int i = 0; i < Degrees.Length; i++)
+        {
+            if (Degrees[i] == 0) que.Enqueue(i);
+        }
+        var sorted = new List<int>();
+        while (que.Count > 0)
+        {
+            var v = que.Dequeue();
+            sorted.Add(v);
+            foreach (var i in G[v])
+            {
+                Degrees[i]--;
+                if (Degrees[i] == 0) que.Enqueue(i);
+            }
+        }
+        if (Degrees.Length != sorted.Count) return null;
+        return sorted;
+    }
+}
+
 class ZAlgorithm//先頭文字列と何文字一致しているか
 {
     static string S;
@@ -626,7 +708,6 @@ class ZAlgorithm//先頭文字列と何文字一致しているか
                 Z[i] = leng;
                 c++;
             }
-
         }
         Z[0] = N;
         return Z;
@@ -809,3 +890,4 @@ class LazySegTree
 //    }
 //    return dp[S, v] = res;
 //}
+
