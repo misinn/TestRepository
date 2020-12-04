@@ -182,7 +182,7 @@ class IndexConverter<T> //文字列など 数の順列に変換する。
     public int Count => itemToIndex.Count;
 }
 
-
+// Dictionaryの代わり 無いキーを参照してもエラーしない。
 class Counter<TKey, TValue> : Dictionary<TKey, TValue> //Dictionary
 {
     new public TValue this[TKey key]
@@ -192,7 +192,25 @@ class Counter<TKey, TValue> : Dictionary<TKey, TValue> //Dictionary
     }
 }
 
-// Tは辺に持たせる情報 いらない時はintで
+// 二分探索 (基本はスニペットのものを使う)
+static class BinarySearch 
+{
+    public static (long lb, long ub) Search(long lb, long ub, long item, Func<long, long, bool> comp) //compは midとアイテムを比較する
+    {
+        while (ub - lb > 1)
+        {
+            var mid = (lb + ub) >> 1;
+            (lb, ub) = comp(mid, item) ? (mid, ub) : (lb, mid);
+        }
+        return (lb, ub);
+    }
+    public static (long lb, long ub) Search(long lb, long ub, long item) => Search(lb, ub, item, (mid, item) => mid < item); //下の境界を求める
+    public static (int lb, int ub) Search(int lb, int ub, long item, Func<long, long, bool> comp) => Search(lb, ub, item, comp);
+    
+}
+
+
+// 有無向グラフ (Tは辺に持たせる情報) 
 class Graph<T>
 {
     protected List<Edge>[] G;
@@ -212,43 +230,24 @@ class Graph<T>
     }
 }
 
-
-
-public class UnionFind
+public class UnionFind : UnionFind<int>
 {
-    int[] p;
-    public UnionFind(int size) => p = Enumerable.Repeat(-1, size).ToArray();
-    public bool Unite(int x, int y)
-    {
-        x = Root(x);
-        y = Root(y);
-        if (x != y)
-        {
-            if (p[y] < p[x]) (y, x) = (x, y);
-            p[x] += p[y];
-            p[y] = x;
-        }
-        return x != y;
-    }
-    public bool IsSameGroup(int x, int y) => Root(x) == Root(y);
-    public int Root(int x) => p[x] < 0 ? x : p[x] = Root(p[x]);
-    public int GetMem(int x) => -p[Root(x)];
+    public UnionFind(int size) : base(size) { }
 }
 
-
-//親にマージした値がのる。
-public class Union_Find<T>
+// 重み付きUF 親にマージした値がのる。(Tは頂点の情報)
+public class UnionFind<T>
 {
     int[] p;
     T[] data;
     Func<T, T, T> Merge;
-    public Union_Find(int size, Func<T, T, T> merge, T[] init)
+    public UnionFind(int size, Func<T, T, T> merge, T[] init)
     {
         p = Enumerable.Repeat(-1, size).ToArray();
         data = init;
         Merge = merge;
     }
-    public Union_Find(int size) : this(size, (a, b) => default, new T[size]) { }
+    public UnionFind(int size) : this(size, (a, b) => default, new T[size]) { }
     public bool Unite(int x, int y)
     {
         x = Root(x);
@@ -264,12 +263,13 @@ public class Union_Find<T>
     }
     public bool IsSameGroup(int x, int y) => Root(x) == Root(y);
     public int Root(int x) => p[x] < 0 ? x : p[x] = Root(p[x]);
-    public T this[int x] => data[Root(x)]; //親の値
     public int GetMem(int x) => -p[Root(x)];
+    public T Weight(int x) => this[x];
+    public T this[int x] => data[Root(x)]; //親の重み
 }
 
 
-//重みつきUF 重みはlongのみ対応
+// 重みつきUF 子に値を持たせる。(重みはlong型)
 public class WeightedUnionFind
 {
     int[] p, rank;
@@ -316,31 +316,32 @@ public class WeightedUnionFind
     public int GetMem(int x) => -p[Root(x)];
 }
 
-
-public class PriorityQueue<T>
+// 優先キュー
+public class PriorityQueue<T> where T : IComparable
 {
-    public long Size { get; private set; } = 0;
-    public long MaxSize { get; private set; } = 0;
-    public T[] m_heap;
+    public int Count { get; private set; } = 0;
+    public int MaxSize { get; private set; } = 0;
+    T[] m_heap;
     Comparison<T> Comp = null;
-    public PriorityQueue(long maxSize, Comparison<T> comp)
+    public PriorityQueue(int maxSize, Comparison<T> comp)
     {
         if (maxSize <= 0) throw new Exception();
         MaxSize = maxSize;
         m_heap = new T[maxSize];
-
         Comp = comp;
     }
+    public PriorityQueue() : this(16, (x, y) => x.CompareTo(y)) { }
+    public PriorityQueue(int maxsize) : this(maxsize, (x, y) => x.CompareTo(y)) { }
+    public PriorityQueue(Comparison<T> comp) : this(16, comp) { }
     public void Push(T x)
     {
-        if (Size == MaxSize)
+        if (Count == MaxSize)
         {
-            T[] new_heap = new T[MaxSize << 1];
-            Array.Copy(m_heap, new_heap, MaxSize);
+            T[] new_heap = new T[MaxSize <<= 1];
+            Array.Copy(m_heap, new_heap, m_heap.Length);
             m_heap = new_heap;
-            MaxSize <<= 1;
         }
-        long i = Size++;
+        long i = Count++;
         while (i > 0)
         {
             long p = (i - 1) / 2;
@@ -352,14 +353,14 @@ public class PriorityQueue<T>
     }
     public T Pop()
     {
-        if (Size == 0) throw new Exception("Queue is empty.");
+        if (Count == 0) throw new Exception("Queue is empty.");
         T result = m_heap[0];
-        T x = m_heap[--Size];
+        T x = m_heap[--Count];
         long i = 0;
-        while (i * 2 + 1 < Size)
+        while (i * 2 + 1 < Count)
         {
             long c1 = i * 2 + 1, c2 = i * 2 + 2;
-            if (c2 < Size && Comp(m_heap[c2], m_heap[c1]) < 0) c1 = c2;
+            if (c2 < Count && Comp(m_heap[c2], m_heap[c1]) < 0) c1 = c2;
             if (Comp(m_heap[c1], x) >= 0) break;
             m_heap[i] = m_heap[c1];
             i = c1;
@@ -369,8 +370,8 @@ public class PriorityQueue<T>
     }
 }
 
-
-class Dijkstraa //spからある地点までの最小コスト
+// ダイクストラ グラフ上でspからそれぞれの点の最小コスト
+class Dijkstraa 
 {
     public static long[] Search(Graph<long> G, int sp,Comparison<(int to,long cost)> comp) //costで比較すればいい
     {
@@ -378,7 +379,7 @@ class Dijkstraa //spからある地点までの最小コスト
         var que = new PriorityQueue<(int to, long cost)>(500000, comp);
         d[sp] = 0;
         que.Push((sp, 0));
-        while (que.Size > 0)
+        while (que.Count > 0)
         {
             var p = que.Pop();
             int v = p.to;
@@ -389,8 +390,7 @@ class Dijkstraa //spからある地点までの最小コスト
                 long cost = edge.Value;
                 if (d[to] > d[v] + cost)
                 {
-                    d[to] = d[v] + cost;
-                    que.Push((to, d[to]));
+                    que.Push((to, d[to] = d[v] + cost));
                 }
             }
         }
@@ -401,8 +401,8 @@ class Dijkstraa //spからある地点までの最小コスト
     public static long Search(Graph<long> G, int sp, int gp, Comparison<(int to,long cost)> comp) => Search(G, sp, comp)[gp];
 }
 
-
-class MinimumSpanningTree //無向グラフのみ
+// 最小全域木 経路のコストの和など(無向グラフのみ)
+class MinimumSpanningTree 
 {
     Graph<long> MSTree;
     List<Graph<long>.Edge> edges;
@@ -433,8 +433,8 @@ class MinimumSpanningTree //無向グラフのみ
             var e = edges[i];
             if (union.IsSameGroup(e.From, e.To)) continue;
             union.Unite(e.From, e.To);
-            res += e.Value;
             MSTree.AddBoth(e.From, e.To, e.Value);
+            res += e.Value;
         }
         return res;
     }
@@ -442,7 +442,7 @@ class MinimumSpanningTree //無向グラフのみ
     public Graph<long> Graph => MSTree;
 }
 
-
+// 1000000007でModした計算
 struct Modular
 {
     const int M = 1000000007;
@@ -505,7 +505,8 @@ struct Modular
     }
 }
 
-class Mat //正方行列
+// 行列(正方行列のみ)
+class Mat 
 {
     long[,] mat;
     static readonly long Mod = 1000000007;
@@ -523,8 +524,8 @@ class Mat //正方行列
     public int Size { get; }
     public long this[int i, int j]
     {
-        set => mat[i,j] = value;
         get => mat[i, j];
+        set { mat[i, j] = value;mat[i, j] %= Mod; }
     }
     public static Mat operator +(Mat a, Mat b)
     {
@@ -595,62 +596,59 @@ class Mat //正方行列
     }
 }
 
+// 半分全列挙 個数40のナップザック問題
 static class HalfFullEnumeration
 {
-    public static long halfFullEnumeration((long v, long w)[] Pairs, long W)
+    //重さW以下で最大の価値
+    public static long Knapsack(long[] v, long[] w, long W) //TODOpairsの無駄な要素を省く
     {
-        int N = Pairs.Length;
-        int n2 = N / 2;
-        var ps = new List<(long v, long w)>(1 << n2);
-
+        int N = v.Length;
+        int n1 = N / 2;
+        int n2 = N - n1;
+        var pairs1 = new (long v, long w)[n1];
+        for (int i = 0; i < (1 << n1); i++)
+        {
+            long sv = 0, sw = 0;
+            for (int j = 0; j < n1; j++)
+            {
+                if ((i & (1 << j)) == 0) continue;
+                sv += v[i];
+                sw += w[i];
+            }
+            pairs1[i] = (sv, sw);
+        }
+        Array.Sort(pairs1);
+        var pairs2 = new (long v, long w)[n2];
         for (int i = 0; i < (1 << n2); i++)
         {
             long sv = 0, sw = 0;
-            for (int j = 0; j < n2; j++)
+            for (int j = n1; j < N; j++)
             {
-                if ((i & (1 << j)) > 0)
-                {
-                    sv += Pairs[j].v;
-                    sw += Pairs[j].w;
-                }
+                if ((i & (1 << j)) == 0) continue;
+                sv += v[i];
+                sw += w[i];
             }
-            ps.Add((sv, sw));
+            pairs2[i] = (sv, sw);
         }
-        ps.Sort((x, y) => x.w.CompareTo(y.w));
-        int m = 1;
-        for (int i = 1; i < (1 << n2); i++)
+        Array.Sort(pairs2);
+        long res = 0;
+        for (int i = 0; i < (1 << n2); i++)
         {
-            if (ps[m - 1].v < ps[i].v)
-                ps[m++] = ps[i];
-        }
-        ps.RemoveRange(m, ps.Count - m);
-        long res = 0; ;
-        for (int i = 0; i < (1 << (N - n2)); i++)
-        {
-            long sv = 0, sw = 0;
-            for (int j = 0; j < (N - n2); j++)
-            {
-                if ((i & (1 << j)) > 0)
-                {
-                    sv += Pairs[n2 + j].v;
-                    sw += Pairs[n2 + j].w;
-                }
-            }
-            int ub = ps.Count;
-            int lb = -1;
+            var (lb, ub) = (-1, pairs2.Length);
             while (ub - lb > 1)
             {
                 int mid = (ub + lb) / 2;
-                if (sw + ps[mid].w > W) ub = mid;
-                else lb = mid;
+                if (pairs2[i].w + pairs1[mid].w <= W) lb = mid;
+                else ub = mid;
             }
             if (lb == -1) continue;
-            else res = Math.Max(res, sv + ps[lb].v);
+            res = Math.Max(res, pairs2[i].v + pairs1[lb].v);
         }
         return res;
     }
 }
 
+// トポソ
 static class TopologicalSort
 {
     //Degreesはその頂点にのびる辺の数 無理ならnullを返す
@@ -677,7 +675,8 @@ static class TopologicalSort
     }
 }
 
-class ZAlgorithm//先頭文字列と何文字一致しているか
+// Zアルゴリズム 先頭文字列と何文字一致しているか
+class ZAlgorithm
 {
     static string S;
     int[] Same;
@@ -688,8 +687,7 @@ class ZAlgorithm//先頭文字列と何文字一致しているか
     }
     static int[] Search()
     {
-        int N = S.Length;
-        int c = 0;
+        int N = S.Length, c = 0;
         var Z = new int[N];
         for (int i = 1; i < N; i++)
         {
@@ -715,8 +713,8 @@ class ZAlgorithm//先頭文字列と何文字一致しているか
     public int this[int i] => Same[i];
 }
 
-
-class BIT//区間の和をlogNで求める
+// BIT 区間の和 速めのLog(N)
+class BIT
 {
     int[] bit;
     int N;
@@ -751,55 +749,93 @@ class BIT//区間の和をlogNで求める
     }
 }
 
-//単更新・範囲検索
+// 二次元BIT 二次元の区間の和
+class BIT2D
+{
+    public int X, Y;
+    int[,] bit;
+    public BIT2D(int X,int Y)
+    {
+        this.X = X;
+        this.Y = Y;
+        bit = new int[X + 1, Y + 1];
+    }
+    public BIT2D(int[,] array) : this(array.GetLength(0), array.GetLength(1))
+    {
+        for (int i = 0; i < X; i++)
+            for (int j = 0; j < Y; j++)
+                Add(i, j, array[i, j]);
+    }
+    public void Add(int x,int y,int value)
+    {
+        for (int i = x + 1; i <= X; i += i & (-i))
+            for (int j = y + 1; j <= Y; j += j & (-j))
+                bit[i, j] += value;
+    }
+    public int Sum(int x0, int y0, int x1, int y1)
+    {
+        return Sum(x0, y0) + Sum(x1, y1) - Sum(x0, y1) - Sum(x1, y0);
+    }
+    int Sum(int x, int y)
+    {
+        var sum = 0;
+        for (var i = x; 0 < i; i -= i & (-i))
+            for (var j = y; 0 < j; j -= j & (-j))
+                sum += bit[i, j];
+        return sum;
+    }
+}
+
+// 単更新・範囲検索
 /// <summary>
-/// updfunc: UpDate時の木を登るとき区間をとのような値で記録するか？
-/// qfunc: Query時に区間同士比べるときどうするか？
+/// updfunc: Update時に上の区間に記録する下の区間同士の計算
+/// qfunc: Query時に出力するための下の区間同士の比較
 /// 上の二つは基本同じ式入れてOK...?
 /// </summary>
 class SegTree<T>
 {
-    static readonly int MAX_N = 1 << 17;
-    static int N;
-    static T init;
-    static T[] dat = new T[2 * MAX_N - 1];
-    static Func<T, T, T> updFunc;
-    static Func<T, T, T> qFunc;
-    public SegTree(int n,T _init,Func<T,T,T> updfunc,Func<T,T,T> qfunc)
+    int N;
+    T init;
+    T[] dat;
+    Func<T, T, T> updFunc, qFunc;
+    public SegTree(int n, T _init, Func<T, T, T> updfunc, Func<T, T, T> qfunc)
     {
         N = 1;
         while (N <= n) N <<= 1;
-        for (int i = 0; i < 2 * N - 1; i++) dat[i] = _init;
+        dat = new T[2 * N - 1];
+        dat.AsSpan().Fill(init);
         updFunc = updfunc;
         qFunc = qfunc;
         init = _init;
     }
-    public void Update(int k,T a)
+    public void Update(int a, T x)
     {
-        k += N - 1;
-        dat[k] = a;
-        while (k > 0)
+        a += N - 1;
+        dat[a] = x;
+        while (a > 0)
         {
-            k = (k - 1) / 2;
-            dat[k] = updFunc(dat[k * 2 + 1], dat[k * 2 + 2]);
+            a = (a - 1) >> 1;
+            dat[a] = updFunc(dat[(a << 1) + 1], dat[(a << 1) + 2]);
         }
     }
-    //[a, b]を検索
-    public T Query(int a, int b) => Query(a, b, 0, 0, N);
+    public T Query(int a) => dat[N - 1 + a]; //点aを検索 O(1)
+    public T Query(int a, int b) => Query(a, b, 0, 0, N); //[a, b)を検索 O(logN)
     private T Query(int a, int b, int k = 0, int l = 0, int r = 0)
     {
         if (r <= a || b <= l) return init;
         else if (a <= l && r <= b) return dat[k];
         else
         {
-            T vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
-            T vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
+            T vl = Query(a, b, (k << 1) + 1, l, (l + r) >> 1);
+            T vr = Query(a, b, (k << 1) + 2, (l + r) >> 1, r);
             return qFunc(vl, vr);
         }
     }
+    public T this[int a] { get => Query(a);set => Update(a, value); }
+    public T this[int a,int b]=> Query(a,b);
 }
 
-//遅延評価セグメントツリー  区間加算のみ対応(ModもOK)
+// 遅延評価セグメントツリー  区間加算のみ対応(ModもOK)
 class LazySegTree
 {
     int n;
@@ -829,8 +865,8 @@ class LazySegTree
             Data[k] += Lazy[k];
             if (r - l > 1)
             {
-                Lazy[k * 2 + 1] += Lazy[k] / 2;
-                Lazy[k * 2 + 2] += Lazy[k] / 2;
+                Lazy[k * 2 + 1] += Lazy[k] >> 1;
+                Lazy[k * 2 + 2] += Lazy[k] >> 1;
             }
         }
         Lazy[k] = 0;
@@ -848,8 +884,8 @@ class LazySegTree
         }
         else//どっちか片方範囲外
         {
-            Update(a, b, x, k * 2 + 1, l, (l + r) / 2);
-            Update(a, b, x, k * 2 + 2, (l + r) / 2, r);
+            Update(a, b, x, k * 2 + 1, l, (l + r) >> 1);
+            Update(a, b, x, k * 2 + 2, (l + r) >> 1, r);
             Data[k] = Data[k * 2 + 1] + Data[k * 2 + 2];
         }
     }
@@ -862,11 +898,104 @@ class LazySegTree
         if (a <= l && r <= b) return Data[k];
         else
         {
-            var vl = Query(a, b, k * 2 + 1, l, (l + r) / 2);
-            var vr = Query(a, b, k * 2 + 2, (l + r) / 2, r);
+            var vl = Query(a, b, k * 2 + 1, l, (l + r) >> 1);
+            var vr = Query(a, b, k * 2 + 2, (l + r) >> 1, r);
             return func(vl, vr);
         }
     }
+    public long this[int a] { get => Query(a);set => Update(a, value); }
+    public long this[int a,int b] { get => Query(a, b); set => Update(a, b, value); }
+}
+
+
+// 両端キュー 双方向からpushできるqueue
+class Deque<T>
+{
+    T[] array;
+    int offset, size;
+    public int Count { get; private set; }
+    public Deque(int size)
+    {
+        array = new T[this.size = size];
+        Count = 0; offset = 0;
+    }
+    public Deque() : this(16) { }
+    public T this[int index] { get => array[GetIndex(index)]; set => array[GetIndex(index)] = value; }
+    int GetIndex(int index)
+    {
+        var tmp = index + offset;
+        return tmp >= size ? tmp - size : tmp;
+    }
+    public T PeekFront() => array[offset];
+    public T PeekBack() => array[GetIndex(Count - 1)];
+    public void PushFront(T item)
+    {
+        if (Count == size) Extend();
+        if (--offset < 0) offset += array.Length;
+        array[offset] = item;
+        Count++;
+    }
+    public void PushBack(T item)
+    {
+        if (Count == size) Extend();
+        var id = (Count++) + offset;
+        if (id >= size) id -= size;
+        array[id] = item;
+    }
+    public T PopFront()
+    {
+        Count--;
+        var tmp = array[offset++];
+        if (offset >= size) offset -= size;
+        return tmp;
+    }
+    public T PopBack() => array[GetIndex(--Count)];
+    public void Insert(int index, T item)
+    {
+        PushFront(item);
+        for (var i = 0; i < index; i++) this[i] = this[i + 1];
+        this[index] = item;
+    }
+    public T RemoveAt(int index)
+    {
+        var tmp = this[index];
+        for (var i = index; i > 0; i--) this[i] = this[i - 1];
+        PopFront();
+        return tmp;
+    }
+    void Extend()
+    {
+        var newArray = new T[size << 1];
+        if (offset > size - Count)
+        {
+            var length = array.Length - offset;
+            Array.Copy(array, offset, newArray, 0, length);
+            Array.Copy(array, 0, newArray, length, Count - length);
+        }
+        else Array.Copy(array, offset, newArray, 0, Count);
+        array = newArray;
+        offset = 0;
+        size <<= 1;
+    }
+}
+
+// 累積和 [a,b)の計算
+public class CumulativeSum
+{
+    long[] Data;
+    public CumulativeSum(long[] A, Func<long, long, long> func)
+    {
+        Data = new long[A.Length + 1];
+        for (int i = 0; i < A.Length; i++)
+        {
+            Data[i + 1] = func(Data[i], A[i]);
+        }
+    }
+    public CumulativeSum(long[] A) : this(A, (i, j) => i + j) { }
+    public long this[int i] => Data[i+1]-Data[i];
+    public long this[int from, int to] => Data[to] - Data[from];
+    public long SectionalSum(int from, int to) => this[from, to];
+    public int Length => Data.Length - 1;
 }
 
 /// <summary>
@@ -890,4 +1019,8 @@ class LazySegTree
 //    }
 //    return dp[S, v] = res;
 //}
+
+
+
+
 
