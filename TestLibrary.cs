@@ -1,10 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 class Scanner
 {
-    
     public static string RString() => Console.ReadLine();
     public static int RInt() => ReadTuple<int>();
     public static long RLong() => ReadTuple<long>();
@@ -141,16 +141,26 @@ class Template
     public static bool ChMin<T>(ref T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) < 0) { a = b; return true; } return false; }
     public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
     public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
-    public static void Copy<T>(T[] source, T[] destination) => Array.Copy(source, destination, source.Length); 
+    public static void Copy<T>(T[] source, T[] destination) => Array.Copy(source, destination, source.Length);
+    public static void Copy<T>(T[] source,T[] destination,int length)=>Array.Copy(source,destination,length);
     public static void Fill<T>(T[] ary, T init) => ary.AsSpan().Fill(init); 
     public static void Fill<T>(T[,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0], ary.Length).Fill(init);
     public static void Fill<T>(T[,,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0, 0], ary.Length).Fill(init);
-    public static T[] Sort<T>(T[] ary) { Array.Sort(ary);return ary; }
-    public static T[] Sort<T>(T[] ary, Comparison<T> comp) { Array.Sort(ary, comp); return ary; }
-    public static T[] Sort<T>(T[] ary, IComparer<T> comp) { Array.Sort(ary, comp); return ary; }
-    public static T[] Reverse<T>(T[] ary) { Array.Reverse(ary); return ary; }
-    public static long[] CumulativeSum(int[] ary) { var ans = new long[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
-    public static double[] CumulativeSum(double[] ary) { var ans = new double[ary.Length + 1]; for (int i = 0; i < ary.Length; i++) ans[i + 1] = ans[i] + ary[i]; return ans; }
+    public static void Sort<T>(T[] ary) { Array.Sort(ary);}
+    public static void Sort<T>(T[] ary, Comparison<T> comp) { Array.Sort(ary, comp); }
+    public static void Sort<T>(T[] ary, IComparer<T> comp) { Array.Sort(ary, comp); }
+    public static void Sort<T>(T[] sourse, params T[][] dest)
+    {
+        var E = Enumerable.Range(0, sourse.Length).ToArray();
+        Array.Sort(sourse, E);
+        foreach (Span<T> item in dest)
+        {
+            Span<T> cd = new T[item.Length];
+            item.CopyTo(cd);
+            for (int j = 0; j < sourse.Length; j++) item[j] = cd[E[j]];
+        }
+    }
+    public static void Reverse<T>(T[] ary) { Array.Reverse(ary); }
     public static string Join<T>(T[] ary, char separater = ' ') => string.Join(separater, ary);
     public static string Join<T>(T[] ary, string separater = " ") => string.Join(separater, ary);
     public static void WriteLine<T>(T str) { Console.WriteLine(str.ToString()); }
@@ -166,8 +176,8 @@ static class Debug //"using staticを置き換えることで入力をランダ�
     public static int[] RInts() => RandomArray(10, 0, 10);
 }
 
-
-class IndexConverter<T> //文字列など 数の順列に変換する。
+//文字列など 数の順列に変換する。
+class IndexConverter<T> : IEnumerable<T> 
 {
     Dictionary<T, int> itemToIndex = new Dictionary<T, int>();
     List<T> indexToItem = new List<T>();
@@ -178,6 +188,9 @@ class IndexConverter<T> //文字列など 数の順列に変換する。
         return itemToIndex[item] = itemToIndex.Count;
     }
     public int IndexOf(T item) => itemToIndex[item];
+    public IEnumerator<T> GetEnumerator() => indexToItem.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    public int this[T item] => itemToIndex[item];
     public T this[int index] => indexToItem[index];
     public int Count => itemToIndex.Count;
 }
@@ -206,9 +219,7 @@ static class BinarySearch
     }
     public static (long lb, long ub) Search(long lb, long ub, long item) => Search(lb, ub, item, (mid, item) => mid < item); //下の境界を求める
     public static (int lb, int ub) Search(int lb, int ub, long item, Func<long, long, bool> comp) => Search(lb, ub, item, comp);
-    
 }
-
 
 // 有無向グラフ (Tは辺に持たせる情報) 
 class Graph<T>
@@ -979,23 +990,30 @@ class Deque<T>
     }
 }
 
-// 累積和 [a,b)の計算
+// 累積和 [a,b)の計算 (get時に計算する。)
 public class CumulativeSum
 {
-    long[] Data;
-    public CumulativeSum(long[] A, Func<long, long, long> func)
+    long[] D, A;
+    bool IsCalcd = false;
+    Func<long, long, long> func;
+    public CumulativeSum(int[] A, Func<long, long, long> func)
     {
-        Data = new long[A.Length + 1];
-        for (int i = 0; i < A.Length; i++)
-        {
-            Data[i + 1] = func(Data[i], A[i]);
-        }
+        D = new long[A.Length + 1];
+        Array.Copy(A, this.A = new long[A.Length], A.Length);
+        this.func = func;
     }
-    public CumulativeSum(long[] A) : this(A, (i, j) => i + j) { }
-    public long this[int i] => Data[i+1]-Data[i];
-    public long this[int from, int to] => Data[to] - Data[from];
-    public long SectionalSum(int from, int to) => this[from, to];
-    public int Length => Data.Length - 1;
+    public CumulativeSum(int[] A) : this(A, (i, j) => i + j) { }
+    public CumulativeSum(int size, Func<long, long, long> func) : this(new int[size], func) { }
+    public CumulativeSum(int size) : this(new int[size]) { }
+    private void Calc()
+    {
+        if (IsCalcd) return;
+        for (int i = 0; i < A.Length; i++) D[i + 1] = func(D[i], A[i]);
+        IsCalcd = true;
+    }
+    public long this[int i]{get { Calc(); return D[i + 1] - D[i]; } set { A[i] = (int)value; IsCalcd = false; }}
+    public long this[int from, int to]{get { Calc(); return D[to] - D[from]; }}
+    public int Length => D.Length - 1;
 }
 
 /// <summary>
