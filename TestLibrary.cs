@@ -1,8 +1,11 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
+using BigInteger = System.Numerics.BigInteger;
+using StringBuilder = System.Text.StringBuilder;
+using IEnumerator = System.Collections.IEnumerator;
+
 class Scanner
 {
     public static string RString() => Console.ReadLine();
@@ -22,134 +25,67 @@ class Scanner
     public static int[][] RIntss(int len, Func<int, int> func) => new int[len][].Select(_ => RInts(func)).ToArray();
     public static long[][] RLongss(int len, Func<long, long> func) => new long[len][].Select(_ => RLongs(func)).ToArray();
     public static double[][] RDoubless(int len, Func<double, double> func) => new double[len][].Select(_ => RDoubles(func)).ToArray();
-    public static T[,] R2DSplits<T>(int H, int W, Func<T, T> func = null, Action<int, int, string> action = null) //空白つなぎの入力
-    {
-        func ??= (_ => _);
-        var ary = new T[H, W];
-        for (int h = 0; h < H; h++)
-        {
-            var str = RStrings();
-            for (int w = 0; w < W; w++)
-            {
-                ary[h, w] = func(ChangeType<T>(str[w]));
-                action?.Invoke(h, w, str[w]);
-            }
-        }
-        return ary;
-    }
-    public static T[,] R2DJoineds<T>(int H, int W, Func<char, T> func, Action<int, int, char> action = null) //文字列の入力
-    {
-        var ary = new T[H, W];
-        for (int h = 0; h < H; h++)
-        {
-            var str = RString();
-            for (int w = 0; w < W; w++)
-            {
-                ary[h, w] = func(str[w]);
-                action?.Invoke(h, w, str[w]);
-            }
-        }
-        return ary;
-    }
-    public static int[,] RInt2D(int H, int W, Func<int, int> func = null, Action<int, int, string> action = null) => R2DSplits(H, W, func, action);
-    public static long[,] RLong2D(int H, int W, Func<long, long> func = null, Action<int, int, string> action = null) => R2DSplits(H, W, func, action);
-    public static double[,] RDouble2D(int H, int W, Func<double, double> func = null, Action<int, int, string> action = null) => R2DSplits(H, W, func, action);
-    public static bool[,] RBool2D(int H, int W, Func<char, bool> func, Action<int, int, char> action = null) => R2DJoineds(H, W, func, action);
     private static T ChangeType<T>(string r) => (T)Convert.ChangeType(r, typeof(T));
     public static T1 ReadTuple<T1>()
     {
         var r = RString();
-        var r1 = (T1)Convert.ChangeType(r, typeof(T1));
-        return r1;
+        return ChangeType<T1>(r);
     }
     public static (T1, T2) ReadTuple<T1, T2>()
     {
         var r = RStrings();
-        var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
-        var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
-        return (r1, r2);
+        return (ChangeType<T1>(r[0]), ChangeType<T2>(r[1]));
     }
     public static (T1, T2, T3) ReadTuple<T1, T2, T3>()
     {
         var r = RStrings();
-        var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
-        var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
-        var r3 = (T3)Convert.ChangeType(r[2], typeof(T3));
-        return (r1, r2, r3);
+        return (ChangeType<T1>(r[0]), ChangeType<T2>(r[1]), ChangeType<T3>(r[2]));
     }
     public static (T1, T2, T3, T4) ReadTuple<T1, T2, T3, T4>()
     {
         var r = RStrings();
-        var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
-        var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
-        var r3 = (T3)Convert.ChangeType(r[2], typeof(T3));
-        var r4 = (T4)Convert.ChangeType(r[3], typeof(T4));
-        return (r1, r2, r3, r4);
+        return (ChangeType<T1>(r[0]), ChangeType<T2>(r[1]), ChangeType<T3>(r[2]), ChangeType<T4>(r[3]));
     }
     public static (T1, T2, T3, T4, T5) ReadTuple<T1, T2, T3, T4, T5>()
     {
         var r = RStrings();
-        var r1 = (T1)Convert.ChangeType(r[0], typeof(T1));
-        var r2 = (T2)Convert.ChangeType(r[1], typeof(T2));
-        var r3 = (T3)Convert.ChangeType(r[2], typeof(T3));
-        var r4 = (T4)Convert.ChangeType(r[3], typeof(T4));
-        var r5 = (T5)Convert.ChangeType(r[4], typeof(T5));
-        return (r1, r2, r3, r4, r5);
+        return (ChangeType<T1>(r[0]), ChangeType<T2>(r[1]), ChangeType<T3>(r[2]), ChangeType<T4>(r[3]), ChangeType<T5>(r[4]));
     }
     public static T1[] ReadTuples<T1>(int N) //N行の入力 => T[N]出力
     {
         var res = new T1[N];
-        for (int i = 0; i < N; i++)
-        {
-            res[i] = ChangeType<T1>(RString());
-        }
+        for (int i = 0; i < N; i++) res[i] = ChangeType<T1>(RString());
         return res;
     }
     public static (T1[], T2[]) ReadTuples<T1, T2>(int N) //N行入力 => (T1[],T2[])
     {
         var (r1, r2) = (new T1[N], new T2[N]);
-        for (int i = 0; i < N; i++)
-        {
-            (r1[i], r2[i]) = ReadTuple<T1, T2>();
-        }
+        for (int i = 0; i < N; i++) (r1[i], r2[i]) = ReadTuple<T1, T2>();
         return (r1, r2);
     }
     public static (T1[], T2[], T3[]) ReadTuples<T1, T2, T3>(int N)
     {
         var (r1, r2, r3) = (new T1[N], new T2[N], new T3[N]);
-        for (int i = 0; i < N; i++)
-        {
-            (r1[i], r2[i], r3[i]) = ReadTuple<T1, T2, T3>();
-        }
+        for (int i = 0; i < N; i++) (r1[i], r2[i], r3[i]) = ReadTuple<T1, T2, T3>();
         return (r1, r2, r3);
     }
     public static (T1[], T2[], T3[], T4[]) ReadTuples<T1, T2, T3, T4>(int N)
     {
         var (r1, r2, r3, r4) = (new T1[N], new T2[N], new T3[N], new T4[N]);
-        for (int i = 0; i < N; i++)
-        {
-            (r1[i], r2[i], r3[i], r4[i]) = ReadTuple<T1, T2, T3, T4>();
-        }
+        for (int i = 0; i < N; i++) (r1[i], r2[i], r3[i], r4[i]) = ReadTuple<T1, T2, T3, T4>();
         return (r1, r2, r3, r4);
     }
 }
-class Template
+public static class Template
 {
-    public static long GCD(long a, long b)=> a == 0 ? b : GCD(b % a, a);
-    public static long LCM(long a, long b)=> a / GCD(a, b) * b;
-    public static bool ChMax<T>(ref T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) > 0) { a = b; return true; } return false; }
-    public static bool ChMin<T>(ref T a, T b) where T :struct, IComparable<T> { if (a.CompareTo(b) < 0) { a = b; return true; } return false; }
-    public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
-    public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
     public static void Copy<T>(T[] source, T[] destination) => Array.Copy(source, destination, source.Length);
-    public static void Copy<T>(T[] source,T[] destination,int length)=>Array.Copy(source,destination,length);
-    public static void Fill<T>(T[] ary, T init) => ary.AsSpan().Fill(init); 
-    public static void Fill<T>(T[,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0], ary.Length).Fill(init);
-    public static void Fill<T>(T[,,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0, 0], ary.Length).Fill(init);
-    public static void Sort<T>(T[] ary) { Array.Sort(ary);}
-    public static void Sort<T>(T[] ary, Comparison<T> comp) { Array.Sort(ary, comp); }
-    public static void Sort<T>(T[] ary, IComparer<T> comp) { Array.Sort(ary, comp); }
-    public static void Sort<T>(T[] sourse, params T[][] dest)
+    public static void Fill<T>(this T[] ary, T init) => ary.AsSpan().Fill(init);
+    public static void Fill<T>(this T[,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0], ary.Length).Fill(init);
+    public static void Fill<T>(this T[,,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0, 0], ary.Length).Fill(init);
+    public static void Sort<T>(this T[] ary) where T : IComparable<T>
+    => Array.Sort(ary);
+    public static void Sort<T>(this T[] ary, Comparison<T> comp) where T : IComparable<T> => Array.Sort(ary, comp);
+    public static void Sort<T>(this T[] sourse, params T[][] dest) where T : IComparable<T>
     {
         var E = Enumerable.Range(0, sourse.Length).ToArray();
         Array.Sort(sourse, E);
@@ -160,10 +96,74 @@ class Template
             for (int j = 0; j < sourse.Length; j++) item[j] = cd[E[j]];
         }
     }
-    public static void Reverse<T>(T[] ary) { Array.Reverse(ary); }
-    public static string Join<T>(T[] ary, char separater = ' ') => string.Join(separater, ary);
-    public static string Join<T>(T[] ary, string separater = " ") => string.Join(separater, ary);
+    public static void Reverse<T>(this T[] ary) where T : IComparable<T> => Array.Reverse(ary);
+    public static string ToJoinedString<T>(this T[] ary, string sep = " ") =>
+        string.Join(sep, ary);
     public static void WriteLine<T>(T str) { Console.WriteLine(str.ToString()); }
+    public static bool ChMax<T>(ref this T value, T other) where T : struct, IComparable<T>
+    {
+        if (value.CompareTo(other) < 0)
+        {
+            value = other;
+            return true;
+        }
+        return false;
+    }
+    public static bool ChMin<T>(ref this T value, T other) where T : struct, IComparable<T>
+    {
+        if (value.CompareTo(other) > 0)
+        {
+            value = other;
+            return true;
+        }
+        return false;
+    }
+    
+}
+
+public static class MyMath
+{
+    public static long GCD(long a, long b) => a == 0 ? b : GCD(b % a, a);
+    public static long LCM(long a, long b) => a / GCD(a, b) * b;
+    public static (long x, long y) extGCD(long a, long b)
+    {
+        if (a < b)
+        {
+            var (x, y) = extGCD(b, a);
+            return (y, x);
+        }
+        if (b == 0) return (1, 0);
+        else
+        {
+            var t = extGCD(b, a % b);
+            return (t.y, t.x - a / b * t.y);
+        }
+    }
+    public static int[] ConvertBase(long sourse, int Base)
+    {
+        long num = 1;
+        while (num <= sourse)
+        {
+            num *= Base;
+        }
+        num /= Base;
+        List<int> ans = new List<int>();
+        while (num >= 1)
+        {
+            int c = (int)(sourse / num);
+            ans.Add(c);
+            sourse -= num * c;
+            num /= Base;
+        }
+        return ans.ToArray();
+    }
+}
+
+class Template2 // 遅い 使わない など
+{
+    //Math.MaxMinの 10倍遅い!
+    public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
+    public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
 }
 
 static class Debug //"using staticを置き換えることで入力をランダムにする" ことが目標
@@ -174,6 +174,9 @@ static class Debug //"using staticを置き換えることで入力をランダ�
     public static int[] RandomArray(int leng, int minvalue, int maxvalue)=>new int[leng].Select(_ => Rand.Next(minvalue, maxvalue)).ToArray();
     public static int RInt() => RandomInt(1, 10);
     public static int[] RInts() => RandomArray(10, 0, 10);
+    //var sw = new System.IO.StreamWriter(Console.OpenStandardOutput()) { AutoFlush = false };
+    //Console.SetOut(sw);
+    //Console.Out.Flush();
 }
 
 //文字列など 数の順列に変換する。
@@ -189,7 +192,7 @@ class IndexConverter<T> : IEnumerable<T>
     }
     public int IndexOf(T item) => itemToIndex[item];
     public IEnumerator<T> GetEnumerator() => indexToItem.GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     public int this[T item] => itemToIndex[item];
     public T this[int index] => indexToItem[index];
     public int Count => itemToIndex.Count;
@@ -846,41 +849,57 @@ class SegTree<T>
     public T this[int a,int b]=> Query(a,b);
 }
 
-// 遅延評価セグメントツリー  区間加算のみ対応(ModもOK)
+// 遅延評価セグメントツリー
+/// <summary>
+/// qfunc: (左,右) クエリ時のデータのマージ
+/// updfunc: (左,右) アプデ時のデータのマージ
+/// efunc1: (元Lazyの値,範囲の差(2の倍数),記録する値) Lazyに移す
+/// efunc2: (子Lazyの値,親Lazyの値) 親から子Lazyに伝搬する
+/// efunc3: (元データの値,Lazyの値) Lazyをデータに移す
+///
+/// StarrySkyTreeの入力例 (new int[N],(x,y)=>Max(x,y),(x,y)=>Max(x,y),(x,y,z)=>x+z,(x,y)=>x+y,(x,y)=>x+y)
+/// </summary>
 class LazySegTree
 {
     int n;
     long[] Data, Lazy;
-    Func<long, long, long> func;
-    public LazySegTree(int[] v, Func<long, long, long> _func)
+    Func<long, long, long> qfunc, updfunc, efunc2, efunc3;
+    Func<long, long, long, long> efunc1;
+    public LazySegTree(int[] v, Func<long, long, long> _qfunc, Func<long, long, long> _updfunc, Func<long, long, long, long> _efunc1, Func<long, long, long> _efunc2, Func<long, long, long> _efunc3)
     {
         int size = v.Length;
-        func = _func;
+        qfunc = _qfunc;
+        updfunc = _updfunc;
+        efunc1 = _efunc1;
+        efunc2 = _efunc2;
+        efunc3 = _efunc3;
         n = 1; while (n < size) n <<= 1;
         Data = new long[n * 2 - 1];
         Lazy = new long[n * 2 - 1];
         for (int i = 0; i < size; i++)
         {
-            Data[i + size - 1] = v[i];
+            Data[i + n - 1] = v[i];
         }
         for (int i = n - 2; i >= 0; i--)//二段目n-1から(一段目は2n-1)
         {
-            Data[i] = Data[i * 2 + 1] + Data[i * 2 + 2];
+            Data[i] = updfunc(Data[i * 2 + 1], Data[i * 2 + 2]);
         }
     }
-    public LazySegTree(int size, Func<long, long, long> _func) : this(new int[size], _func) { }
+    public LazySegTree(int size, Func<long, long, long> _qfunc, Func<long, long, long> _updfunc, Func<long, long, long, long> _efunc1, Func<long, long, long> _efunc2, Func<long, long, long> _efunc3) : this(new int[size], _qfunc, _updfunc, _efunc1, _efunc2, _efunc3) { }
+    public LazySegTree(int[] v) : this(v, (x, y) => x + y, (x, y) => x + y, (x, y, z) => x + y * z, (x, y) => x + y / 2, (x, y) => x + y) { }
+    public LazySegTree(int size) : this(new int[size], (x, y) => x + y, (x, y) => x + y, (x, y, z) => x + y * z, (x, y) => x + y / 2, (x, y) => x + y) { }
     void eval(int k, int l, int r)//nodeが呼び出された時に伝達する。
     {
-        if (Lazy[k] != 0)
+        if (Lazy[k] != default)
         {
-            Data[k] += Lazy[k];
+            Data[k] = efunc3(Data[k], Lazy[k]); // Data[k]+Lazy[k]
             if (r - l > 1)
             {
-                Lazy[k * 2 + 1] += Lazy[k] >> 1;
-                Lazy[k * 2 + 2] += Lazy[k] >> 1;
+                Lazy[k * 2 + 1] = efunc2(Lazy[k * 2 + 1], Lazy[k]); // Lazy[k]/2
+                Lazy[k * 2 + 2] = efunc2(Lazy[k * 2 + 2], Lazy[k]); // Lazy[k]/2
             }
         }
-        Lazy[k] = 0;
+        Lazy[k] = default;
     }
     public void Update(int a, long x) => Update(a, a + 1, x, 0, 0, n);
     public void Update(int a, int b, long x) => Update(a, b, x, 0, 0, n); //[a,b)
@@ -890,14 +909,14 @@ class LazySegTree
         if (b <= l || r <= a) return;
         if (a <= l && r <= b)//完全にl,rが含まれる
         {
-            Lazy[k] += (r - l) * x;
+            Lazy[k] = efunc1(Lazy[k], r - l, x); // Lazy[k]+(r-l)*x
             eval(k, l, r);
         }
         else//どっちか片方範囲外
         {
             Update(a, b, x, k * 2 + 1, l, (l + r) >> 1);
             Update(a, b, x, k * 2 + 2, (l + r) >> 1, r);
-            Data[k] = Data[k * 2 + 1] + Data[k * 2 + 2];
+            Data[k] = updfunc(Data[k * 2 + 1], Data[k * 2 + 2]);
         }
     }
     public long Query(int a, int b) => Query(a, b, 0, 0, n);
@@ -911,13 +930,86 @@ class LazySegTree
         {
             var vl = Query(a, b, k * 2 + 1, l, (l + r) >> 1);
             var vr = Query(a, b, k * 2 + 2, (l + r) >> 1, r);
-            return func(vl, vr);
+            return qfunc(vl, vr);
         }
     }
-    public long this[int a] { get => Query(a);set => Update(a, value); }
-    public long this[int a,int b] { get => Query(a, b); set => Update(a, b, value); }
+    public long this[int a] { get => Query(a); set => Update(a, value); }
+    public long this[int a, int b] { get => Query(a, b); set => Update(a, b, value); }
 }
 
+//抽象化遅延評価セグメントツリー [a,b)に対する更新・取得
+class LazySegTree<T> where T : struct, IComparable
+{
+    int n;
+    T[] Data, Lazy;
+    T defalt = default;
+    Func<T, T, T> qfunc, updfunc, efunc2, efunc3;
+    Func<T, int, T, T> efunc1;
+    public LazySegTree(T[] v, T init, Func<T, T, T> _qfunc, Func<T, T, T> _updfunc, Func<T, int, T, T> _efunc1, Func<T, T, T> _efunc2, Func<T, T, T> _efunc3)
+    {
+        int size = v.Length;
+        qfunc = _qfunc;
+        updfunc = _updfunc;
+        efunc1 = _efunc1;
+        efunc2 = _efunc2;
+        efunc3 = _efunc3;
+        defalt = init;
+        n = 1; while (n < size) n <<= 1;
+        Data = new T[n * 2 - 1];
+        Lazy = new T[n * 2 - 1];
+        for (int i = 0; i < size; i++) Data[i + n - 1] = v[i];
+        for (int i = n - 2; i >= 0; i--) Data[i] = updfunc(Data[i * 2 + 1], Data[i * 2 + 2]);
+    }
+    public LazySegTree(int size,T init, Func<T,T,T> _qfunc, Func<T,T,T> _updfunc, Func<T,int,T,T> _efunc1, Func<T,T,T> _efunc2, Func<T,T,T> _efunc3) : this(new T[size],init, _qfunc, _updfunc, _efunc1, _efunc2, _efunc3) { }
+    
+    void eval(int k, int l, int r)//nodeが呼び出された時に伝達する。
+    {
+        if (Lazy[k].CompareTo(defalt) != 0)
+        {
+            Data[k] = efunc3(Data[k], Lazy[k]); // Data[k]+Lazy[k]
+            if (r - l > 1)
+            {
+                Lazy[k * 2 + 1] = efunc2(Lazy[k * 2 + 1], Lazy[k]); // Lazy[k]/2
+                Lazy[k * 2 + 2] = efunc2(Lazy[k * 2 + 2], Lazy[k]); // Lazy[k]/2
+            }
+        }
+        Lazy[k] = default;
+    }
+    public void Update(int a, T x) => Update(a, a + 1, x, 0, 0, n);
+    public void Update(int a, int b, T x) => Update(a, b, x, 0, 0, n);
+    private void Update(int a, int b, T x, int k, int l, int r)
+    {
+        eval(k, l, r);
+        if (b <= l || r <= a) return; // 範囲外
+        if (a <= l && r <= b)// 範囲内
+        {
+            Lazy[k] = efunc1(Lazy[k], r - l, x); // Lazy[k]+(r-l)*x
+            eval(k, l, r);
+        }
+        else// 片方だけ範囲外
+        {
+            Update(a, b, x, k * 2 + 1, l, (l + r) >> 1);
+            Update(a, b, x, k * 2 + 2, (l + r) >> 1, r);
+            Data[k] = updfunc(Data[k * 2 + 1], Data[k * 2 + 2]);
+        }
+    }
+    public T Query(int a, int b) => Query(a, b, 0, 0, n);
+    public T Query(int a) => Query(a, a + 1, 0, 0, n);
+    private T Query(int a, int b, int k, int l, int r)
+    {
+        if (b <= l || r <= a) return default;
+        eval(k, l, r);
+        if (a <= l && r <= b) return Data[k];
+        else
+        {
+            var vl = Query(a, b, k * 2 + 1, l, (l + r) >> 1);
+            var vr = Query(a, b, k * 2 + 2, (l + r) >> 1, r);
+            return qfunc(vl, vr);
+        }
+    }
+    public T this[int a] { get => Query(a); set => Update(a, value); }
+    public T this[int a, int b] { get => Query(a, b); set => Update(a, b, value); }
+}
 
 // 両端キュー 双方向からpushできるqueue
 class Deque<T>
@@ -1016,12 +1108,11 @@ public class CumulativeSum
     public int Length => D.Length - 1;
 }
 
-/// <summary>
-/// ビットDPのサンプル
-/// bitをテーブルにのせてDPするだけ(メモ化再帰)
-/// n:地点数    d:距離行列
-/// S:訪れた地点 v:現在地点
-/// </summary>
+
+// ビットDPのサンプル
+// bitをテーブルにのせてDPするだけ(メモ化再帰)
+// n:地点数    d:距離行列
+// S:訪れた地点 v:現在地点
 
 //static int rec(int S, int v)
 //{
@@ -1038,7 +1129,73 @@ public class CumulativeSum
 //    return dp[S, v] = res;
 //}
 
+static class LCS
+{
+    public static int Search(int[] aList, int[] blist)
+    {
+        int n = aList.Length;
+        int m = blist.Length;
+        var dp = new int[n + 1][];
+        for (int i = 0; i <= n; i++)
+        {
+            dp[i] = Enumerable.Repeat(int.MaxValue, m + 1).ToArray();
+        }
+        dp[0][0] = 0;
+        for (int i = 0; i < n + 1; i++)
+        {
+            for (int j = 0; j < m + 1; j++)
+            {
+                if (i > 0)
+                {
+                    dp[i][j] = Math.Min(dp[i][j], dp[i - 1][j] + 1);
+                }
+                if (j > 0)
+                {
+                    dp[i][j] = Math.Min(dp[i][j], dp[i][j - 1] + 1);
+                }
+                if (i > 0 && j > 0)
+                {
+                    dp[i][j] = Math.Min(dp[i][j], dp[i - 1][j - 1] + (aList[i - 1] == blist[j - 1] ? 0 : 1));
+                }
+            }
+        }
+        return dp[n][m];
+    }
+}
 
-
-
-
+//Modしない計算 BigInteger型で返す
+class BigMath
+{
+    const int arysize = 100;
+    static BigInteger[] facs = new BigInteger[arysize];
+    static int facscount = -1;
+    public static BigInteger Fac(BigInteger n)
+    {
+        facs[0] = 1;
+        while (facscount <= n)
+        {
+            facs[++facscount + 1] = facs[facscount] * (facscount + 1);
+        }
+        return facs[(int)n];
+    }
+    public static BigInteger Fac(BigInteger n, BigInteger r)
+    {
+        BigInteger ans = n;
+        while (n++ < r)
+        {
+            ans *= n;
+        }
+        return ans;
+    }
+    public static BigInteger nCr(BigInteger n, BigInteger r)
+    {
+        return (n < r) ? 0
+             : (n == r) ? 1
+                        : (BigInteger.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
+                            : Fac(n - r + 1, n) / Fac(r);
+    }
+    public static BigInteger nPr(BigInteger n, BigInteger r)
+    {
+        return Fac(n) / Fac(n - r);
+    }
+}
