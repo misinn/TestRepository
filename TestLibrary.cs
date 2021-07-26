@@ -122,9 +122,15 @@ namespace LIB340
             }
             */
         }
+        public static class CollictionExtension
+        {
+
+        }
+
         public static class Template
         {
             public static void CopyTo<T>(this T[] source, T[] destination) => Array.Copy(source, destination, source.Length);
+            public static void CopyTo(this Array ary, Array dest) => Array.Copy(ary, dest, ary.Length);
             public static void Fill<T>(this T[] ary, T init) => ary.AsSpan().Fill(init);
             public static void Fill<T>(this T[,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0], ary.Length).Fill(init);
             public static void Fill<T>(this T[,,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0, 0], ary.Length).Fill(init);
@@ -164,6 +170,8 @@ namespace LIB340
                 }
                 return false;
             }
+            public static void Swap<T>(ref this (T, T) item) =>
+        item = (item.Item2, item.Item1);
             //[min,max]の範囲内かどうか
             public static bool IsBetween<T>(ref this T value, T min, T max) where T : struct, IComparable<T>
             {
@@ -177,12 +185,7 @@ namespace LIB340
             public static readonly (int, int)[] DD4 = new (int y, int x)[4] { (1, 0), (0, 1), (-1, 0), (0, -1) };
             public static readonly (int, int)[] DD8 = new (int y, int x)[8] { (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1) };
         }
-        class Template2
-        {
-            //遅すぎ (Math.MaxMinの10倍遅い)
-            public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
-            public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
-        }
+        
 
         /// <summary>
         /// 
@@ -315,10 +318,38 @@ namespace LIB340
                 }
                 return ans.ToArray();
             }
+            public static IEnumerable<IEnumerable<T>> Permutation<T>(IEnumerable<T> source)
+            {
+                var items = source.ToArray();
+                yield return items;
+                var counter = new int[items.Length];
+                var idx = 0;
+                var count = 0;
+                var fact = 1L;
+                for (var i = 1; i <= items.Length; i++) fact *= i;
+                while (idx < items.Length)
+                {
+                    if (counter[idx] < idx)
+                    {
+                        if (idx % 2 == 0) (items[0], items[idx]) = (items[idx], items[0]);
+                        else (items[counter[idx]], items[idx]) = (items[idx], items[counter[idx]]);
+                        yield return items;
+                        counter[idx]++;
+                        count++;
+                        idx = 0;
+                    }
+                    else
+                    {
+                        counter[idx] = 0;
+                        idx++;
+                    }
+                    if (count == fact) yield break;
+                }
+            }
         }
 
         // 1000000007でModした計算
-        //静的にModを決定します
+        //静的な値で剰余した値を返します。
         struct Modular
         {
             const int M = 1000000007;
@@ -375,7 +406,8 @@ namespace LIB340
             }
             public static Modular Npr(int n, int r)
             {
-                return Fac(n) / Fac(n - r);
+                if (Math.Max(n, r) <= arysize) return Fac(n) / Fac(n - r);
+                return Fac(n - r + 1, n);
             }
             public static explicit operator int(Modular a)
             {
@@ -389,73 +421,74 @@ namespace LIB340
         /// </summary>
         class ModMat
         {
-            long[,] mat;
+            long[,] Data;
             static readonly long Mod = 1000000007;
             public ModMat(int _size)
             {
                 Size = _size;
-                mat = new long[Size, Size];
+                Data = new long[Size, Size];
             }
             public ModMat(int[,] _mat)
             {
                 Size = _mat.Length;
-                mat = new long[Size, Size];
-                Array.Copy(_mat, mat, Size * Size);
+                Data = new long[Size, Size];
+                Array.Copy(_mat, Data, Size * Size);
             }
             public int Size { get; }
             public long this[int i, int j]
             {
-                get => mat[i, j];
-                set { mat[i, j] = value; mat[i, j] %= Mod; }
+                get => Data[i, j];
+                set { Data[i, j] = value; Data[i, j] %= Mod; }
             }
-            public static ModMat operator +(ModMat a, ModMat b)
+            public static ModMat operator +(ModMat A, ModMat B)
             {
-                if (a.Size != b.Size) throw new Exception($"ex at'+' a.size={a.Size} b.size={b.Size}");
-                for (int i = 0; i < a.Size; i++)
+                if (A.Size != B.Size) throw new Exception($"ex at'+' a.size={A.Size} b.size={B.Size}");
+                for (int i = 0; i < A.Size; i++)
                 {
-                    for (int j = 0; j < a.Size; j++)
+                    for (int j = 0; j < A.Size; j++)
                     {
-                        a[i, j] = (a[i, j] + b[i, j]) % Mod;
+                        A[i, j] = (A[i, j] + B[i, j]) % Mod;
                     }
                 }
-                return a;
+                return A;
             }
-            public static ModMat operator -(ModMat a, ModMat b)
+            public static ModMat operator -(ModMat A, ModMat B)
             {
-                if (a.Size != b.Size) throw new Exception($"ex at'-' a.size={a.Size} b.size={b.Size}");
-                for (int i = 0; i < a.Size; i++)
+                if (A.Size != B.Size) throw new Exception($"ex at'-' a.size={A.Size} b.size={B.Size}");
+                for (int i = 0; i < A.Size; i++)
                 {
-                    for (int j = 0; j < a.Size; j++)
+                    for (int j = 0; j < A.Size; j++)
                     {
-                        a[i, j] = (a[i, j] - b[i, j] + Mod) % Mod;
+                        A[i, j] = (A[i, j] - B[i, j] + Mod) % Mod;
                     }
                 }
-                return a;
+                return A;
             }
-            public static ModMat operator *(ModMat a, ModMat b)
+            public static ModMat operator *(ModMat A, ModMat B)
             {
-                if (a.Size != b.Size) throw new Exception($"ex at'*' a.size={a.Size} b.size={b.Size}");
-                var C = new ModMat(a.Size);
-                for (int i = 0; i < a.Size; i++)
+                if (A.Size != B.Size) throw new Exception($"ex at'*' a.size={A.Size} b.size={B.Size}");
+                int N = A.Size;
+                var c = new ModMat(N);
+                for (int i = 0; i < N; i++)
                 {
-                    for (int k = 0; k < b.Size; k++)
+                    for (int k = 0; k < N; k++)
                     {
-                        for (int j = 0; j < a.Size; j++)
+                        for (int j = 0; j < N; j++)
                         {
-                            C[i, j] = (C[i, j] + a[i, k] * b[k, j]) % Mod;
+                            c[i, j] = (c[i, j] + A[i, k] * B[k, j]) % Mod;
                         }
                     }
                 }
-                return C;
+                return c;
             }
-            public static ModMat operator *(ModMat a, long b)
+            public static ModMat operator *(ModMat A, long b)
             {
-                var C = new ModMat(a.Size);
-                for (int i = 0; i < a.Size; i++)
+                var C = new ModMat(A.Size);
+                for (int i = 0; i < A.Size; i++)
                 {
-                    for (int j = 0; j < a.Size; j++)
+                    for (int j = 0; j < A.Size; j++)
                     {
-                        C[i, j] = a[i, j] * b % Mod;
+                        C[i, j] = A[i, j] * b % Mod;
                     }
                 }
                 return C;
@@ -492,18 +525,15 @@ namespace LIB340
             /// new時にサイズ指定するとサイズは固定
             /// 辺重複可
             /// </summary>
-            /// <typeparam name="TVertex"></typeparam>
             /// <typeparam name="TEdge"></typeparam>
-            class Graph<TVertex, TEdge>
+            class Graph<TEdge>
             {
                 int maxsize = 0;
-                bool arrowexpand = true;
-                private Node<TVertex, TEdge>[] G;
-                public Graph(int size = 4)
+                private Node<TEdge>[] G;
+                public Graph(int size = 1024)
                 {
-                    arrowexpand = size == 4;
                     maxsize = size;
-                    G = new Node<TVertex, TEdge>[size].Select(_ => _ = new Node<TVertex, TEdge>()).ToArray();
+                    G = new Node<TEdge>[size].Select(_ => _ = new Node<TEdge>()).ToArray();
                 }
                 public void Add(Edge<TEdge> edge)
                 {
@@ -517,8 +547,7 @@ namespace LIB340
                 }
                 private void Expand()
                 {
-                    if (!arrowexpand) throw new Exception("グラフが指定したサイズを超える入力を受け取りました。");
-                    var temp = new Node<TVertex, TEdge>[maxsize <<= 1].Select(_ => _ = new Node<TVertex, TEdge>()).ToArray();
+                    var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node<TEdge>()).ToArray();
                     Array.Copy(G, temp, G.Length);
                     G = temp;
                 }
@@ -529,29 +558,34 @@ namespace LIB340
                             yield return edge;
                 }
                 public int Length => G.Length;
-                public Node<TVertex, TEdge> this[int i] => G[i];
-                public IEnumerator<Node<TVertex, TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
+                public Node<TEdge> this[int i] => G[i];
+                public IEnumerator<Node<TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
             }
-            class Graph<TEdge> : Graph<TEdge, TEdge> { public Graph(int size = 4) : base(size) { } }
-            class Graph : Graph<int, int> { public Graph(int size = 4) : base(size) { } }
-            public class Node<Tvertex, Tedge>
+            class Graph : Graph<int>
             {
-                public Tvertex vertex = default;
+                public Graph(int size = 1024) : base(size) { }
+            }
+            public class Node<Tedge>
+            {
                 public List<Edge<Tedge>> edges = new List<Edge<Tedge>>();
-                public static implicit operator List<Edge<Tedge>>(Node<Tvertex, Tedge> node) => node.edges;
+                public static implicit operator List<Edge<Tedge>>(Node<Tedge> node) => node.edges;
                 public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.GetEnumerator();
             }
             public struct Edge<T>
             {
                 public int From, To;
                 public T Value;
+                public Edge(int from, int to, T value = default)
+                {
+                    From = from; To = to; Value = value;
+                }
             }
         }
-        
+
 
         /// <summary>
         /// ダイクストラ 有向グラフの拡張メソッド 始点から各頂点までの最小コストを求める
-        /// 優先キュー  を先に実装しておくこと
+        /// 先に実装する [優先キュー] [グラフ]
         /// Search : O(ElogV)
         /// </summary>
         static class Dijkstraa
@@ -567,22 +601,23 @@ namespace LIB340
                 que.Enqueue((from, 0));
                 while (que.Count > 0)
                 {
-                    var p = que.Dequeue();
-                    int v = p.to;
-                    if (d[v] < p.cost) continue;
+                    var (v,c) = que.Dequeue();
+                    if (d[v] < c) continue;
                     foreach (var edge in G[v])
                     {
-                        int to = edge.To;
-                        long cost = (long)Convert.ChangeType(edge.Value, typeof(long));
-                        long ncost = d[v] + cost;
-                        if (d[to] > ncost)
+                        long ecost = ChLong(edge.Value);
+
+                        int nv = edge.To;
+                        long nc = d[v] + ecost;
+                        if (d[nv] > nc)
                         {
-                            que.Enqueue((to, d[to] = ncost));
+                            que.Enqueue((nv, d[nv] = nc));
                         }
                     }
                 }
                 return d;
             }
+            static long ChLong(object value)=> (long)Convert.ChangeType(value, typeof(long));
         }
 
         /// <summary>
@@ -867,20 +902,79 @@ namespace LIB340
             object ICollection.SyncRoot => this;
         }
 
-
-        // 単更新・範囲検索
         /// <summary>
-        /// updfunc: Update時に上の区間に記録する下の区間同士の計算
-        /// qfunc: Query時に出力するための下の区間同士の比較
-        /// 上の二つは基本同じ式入れてOK...?
-        /// TODO モノイド実装
+        /// 二次元累積和
+        /// 二次元区間の区間和を求めます。
         /// </summary>
+        class CumulativeSum2D
+        {
+            long[,] D;
+            int H, W;
+            /// <summary>O(HW)</summary>
+            public CumulativeSum2D(long[,] A)
+            {
+                H = A.GetLength(0);
+                W = A.GetLength(1);
+                D = new long[H + 1, W + 1];
+                Copy(A);
+                Culc();
+            }
+            void Culc()
+            {
+
+                for (int i = 0; i < H; i++)
+                {
+                    for (int j = 0; j < W + 1; j++)
+                    {
+                        D[i + 1, j] += D[i, j];
+                    }
+                }
+                for (int i = 0; i < H + 1; i++)
+                {
+                    for (int j = 0; j < W; j++)
+                    {
+                        D[i, j + 1] += D[i, j];
+                    }
+                }
+            }
+            void Copy(long[,] A)
+            {
+                for (int i = 0; i < H; i++)
+                {
+                    for (int j = 0; j < W; j++)
+                    {
+                        D[i + 1, j + 1] = A[i, j];
+                    }
+                }
+            }
+            /// <summary>
+            /// y : [0,H]
+            /// x : [0,W]
+            /// を指定して指定した範囲の区間和を求める。
+            /// </summary>
+            public long GetSum(int y1, int x1, int y2, int x2)
+            {
+                if (y2 < y1) (y1, y2) = (y2, y1);
+                if (x2 < x1) (x2, x1) = (x1, x2);
+                var sum = D[y2, x2] + D[y1, x1] - D[y2, x1] - D[y1, x2];
+                return sum;
+            }
+            public long this[int i, int j] => D[i, j];
+        }
+        /// <summary>
+        /// セグメントツリー 単更新・範囲検索 ジェネリクス
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         class SegTree<T>
         {
             int N;
             T init;
             T[] dat;
             Func<T, T, T> updFunc, qFunc;
+            /// <param name="n">要素数</param>
+            /// <param name="_init">単位元</param>
+            /// <param name="updfunc">子をマージするときの式</param>
+            /// <param name="qfunc"><子同士のクエリの結果をマージする式/param>
             public SegTree(int n, T _init, Func<T, T, T> updfunc, Func<T, T, T> qfunc)
             {
                 N = 1;
@@ -1006,7 +1100,7 @@ namespace LIB340
 
 
 
-    //これ、どう名付ければいいの...
+    //これ、どう名付ければ...
     namespace SOMETHINGS
     {
         /// <summary>
@@ -1019,7 +1113,7 @@ namespace LIB340
             List<T> indexToItem = new List<T>();
             public int Add(T item)
             {
-                if (itemToIndex.ContainsKey(item)) return -1;
+                if (itemToIndex.ContainsKey(item)) return itemToIndex[item];
                 indexToItem.Add(item);
                 return itemToIndex[item] = itemToIndex.Count;
             }
@@ -1035,7 +1129,7 @@ namespace LIB340
         /// Dictionaryの代わり
         /// 無いキーを参照するとdefaultの値を返す。
         /// </summary>
-        class SafeDictionary<TKey, TValue> : Dictionary<TKey, TValue> //Dictionary
+        class DefaultDict<TKey, TValue> : Dictionary<TKey, TValue> //Dictionary
         {
             new public TValue this[TKey key]
             {
@@ -1046,7 +1140,7 @@ namespace LIB340
 
         /// <summary>
         /// 二分探索
-        /// (基本をスニペットのものを使おう)
+        /// (基本はスニペットのものを使おう)
         /// </summary>
         static class BinarySearch
         {
@@ -1385,7 +1479,7 @@ namespace LIB340
     }
 
     // 両端キュー 双方向からpushできるqueue
-    //TODO 使ったことがない　なんで
+    //TODO BUG
     class Deque<T>
     {
         T[] array;
@@ -1573,7 +1667,9 @@ namespace LIB340
             return Fac(n) / Fac(n - r);
         }
     }
-    //座標圧縮
+    /// <summary>
+    /// 座標圧縮
+    /// </summary>
     static class CoordinateCompression
     {
         public static int[] Compress(int[] A)
@@ -1581,15 +1677,15 @@ namespace LIB340
             var nA = A.OrderBy(_ => _).Distinct().ToArray();
             var N = A.Length;
             var nN = nA.Length;
-            List<int> ans = new List<int>(N);
+            var ans = new List<int>(N);
 
-            for (int i = 0; i < N; i++)
+            foreach (var a in A)
             {
                 var (lb, ub) = (-1, nN);
                 while (ub - lb > 1)
                 {
                     var mid = (lb + ub) / 2;
-                    (lb, ub) = nA[mid] <= A[i] ? (mid, ub) : (lb, mid);
+                    (lb, ub) = nA[mid] <= a ? (mid, ub) : (lb, mid);
                 }
                 ans.Add(lb);
             }
@@ -1598,6 +1694,9 @@ namespace LIB340
     }
 
 }
+
+
+
 /// <summary>
 /// ヒューリスティックコンテストのためのデータ構造
 /// </summary>
@@ -1666,6 +1765,23 @@ namespace ForHeuristic
         }
     }
 }
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+/// //////////////////////////////////////////////////////////////////////////
+///                                                                        ///
+///                      ここから開発途中のライブラリ                           ///
+///                                                                        ///
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+
+
 
 namespace TEST
 {
@@ -1739,6 +1855,116 @@ namespace TEST
             public T Value;
         }
     }
+    namespace OldGraph
+    {
+        class Graph<TVertex, TEdge>
+        {
+            int maxsize = 0;
+            private Node<TVertex, TEdge>[] G;
+            public Graph(int size = 1024)
+            {
+                maxsize = size;
+                G = new Node<TVertex, TEdge>[size].Select(_ => _ = new Node<TVertex, TEdge>()).ToArray();
+            }
+            public void Add(Edge<TEdge> edge)
+            {
+                while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
+                G[edge.From].edges.Add(edge);
+            }
+            public void AddBoth(Edge<TEdge> edge)
+            {
+                Add(edge);
+                Add(new Edge<TEdge> { From = edge.To, To = edge.From, Value = edge.Value });
+            }
+            private void Expand()
+            {
+                var temp = new Node<TVertex, TEdge>[maxsize *= 2].Select(_ => _ = new Node<TVertex, TEdge>()).ToArray();
+                Array.Copy(G, temp, G.Length);
+                G = temp;
+            }
+            public IEnumerable<Edge<TEdge>> GetEdges()
+            {
+                foreach (var node in G)
+                    foreach (var edge in node)
+                        yield return edge;
+            }
+            public int Length => G.Length;
+            public Node<TVertex, TEdge> this[int i] => G[i];
+            public IEnumerator<Node<TVertex, TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
+        }
+        class Graph<TEdge> : Graph<TEdge, TEdge> { }
+        class Graph : Graph<int, int> { }
+        public class Node<Tvertex, Tedge>
+        {
+            public Tvertex vertex = default;
+            public List<Edge<Tedge>> edges = new List<Edge<Tedge>>();
+            public static implicit operator List<Edge<Tedge>>(Node<Tvertex, Tedge> node) => node.edges;
+            public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.GetEnumerator();
+        }
+        public struct Edge<T>
+        {
+            public int From, To;
+            public T Value;
+        }
+    }
+    namespace NextGraph
+    {
+        class Graph<TEdge>
+        {
+            int maxsize = 0;
+            private Node<TEdge>[] G;
+            public Graph(int size = 1024)
+            {
+                maxsize = size;
+                G = new Node<TEdge>[size].Select(_ => _ = new Node<TEdge>()).ToArray();
+            }
+            public void Add(Edge<TEdge> edge)
+            {
+                while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
+                G[edge.From].edges.Add(edge);
+            }
+            public void AddBoth(Edge<TEdge> edge)
+            {
+                Add(edge);
+                Add(new Edge<TEdge> { From = edge.To, To = edge.From, Value = edge.Value });
+            }
+            private void Expand()
+            {
+                var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node<TEdge>()).ToArray();
+                Array.Copy(G, temp, G.Length);
+                G = temp;
+            }
+            public IEnumerable<Edge<TEdge>> GetEdges()
+            {
+                foreach (var node in G)
+                    foreach (var edge in node)
+                        yield return edge;
+            }
+            public int Length => G.Length;
+            public Node<TEdge> this[int i] => G[i];
+            public IEnumerator<Node<TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
+        }
+        class Graph : Graph<int>
+        {
+            public Graph(int size = 1024) : base(size) { }
+        }
+        public class Node<Tedge>
+        {
+            public List<Edge<Tedge>> edges = new List<Edge<Tedge>>();
+            public static implicit operator List<Edge<Tedge>>(Node<Tedge> node) => node.edges;
+            public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.GetEnumerator();
+        }
+        public struct Edge<T>
+        {
+            public int From, To;
+            public T Value;
+            public Edge(int from, int to, T value = default)
+            {
+                From = from; To = to; Value = value;
+            }
+        }
+    }
+
 
     static class MaxFlow
     {
@@ -1789,6 +2015,7 @@ namespace TEST
         }
     }
 }
+#if test
 namespace SegTree
 {
     /// <summary>
@@ -1863,3 +2090,10 @@ namespace SegTree
     }
 }
 
+class Template2
+        {
+            //遅すぎ (Math.MaxMinの10倍遅い)
+            public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
+            public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
+        }
+#endif
