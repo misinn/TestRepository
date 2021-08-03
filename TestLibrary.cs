@@ -46,81 +46,73 @@ namespace LIB340
 {
     namespace TEMPLATES
     {
-        class Scanner
+        public static class StaticScanner
         {
-            public static string RString() => Console.ReadLine();
+            static System.IO.Stream reader;
+            static byte[] buffer = new byte[1024];
+            static int cursor = 0, length = 0;
+            static StaticScanner()
+            {
+                reader = Console.OpenStandardInput();
+            }
+            public static string RStr()
+            {
+                var line = new System.Text.StringBuilder();
+                char c;
+                while (true)
+                {
+                    if (cursor == length)
+                    {
+                        length = reader.Read(buffer);
+                        cursor = 0;
+                        if (length == 0) break;
+                    }
+                    c = (char)buffer[cursor++];
+                    if (c == '\n') break;
+                    line.Append(c);
+                }
+                return line.ToString();
+            }
             public static int RInt() => RTuple<int>();
             public static long RLong() => RTuple<long>();
             public static double RDouble() => RTuple<double>();
-            public static string[] RStrings() => Console.ReadLine().Split();
-            public static int[] RInts() => Array.ConvertAll(RStrings(), int.Parse);
-            public static long[] RLongs() => Array.ConvertAll(RStrings(), long.Parse);
-            public static double[] RDoubles() => Array.ConvertAll(RStrings(), double.Parse);
+            public static string[] RStrs() => RStr().Split();
+            public static int[] RInts() => Array.ConvertAll(RStrs(), int.Parse);
+            public static long[] RLongs() => Array.ConvertAll(RStrs(), long.Parse);
+            public static double[] RDoubles() => Array.ConvertAll(RStrs(), double.Parse);
             public static int[] RInts(Func<int, int> func) => RInts().Select(func).ToArray();
             public static long[] RLongs(Func<long, long> func) => RLongs().Select(func).ToArray();
             public static double[] RDoubles(Func<double, double> func) => RDoubles().Select(func).ToArray();
-            public static int[][] RIntss(int len) => new int[len][].Select(_ => RInts()).ToArray();
-            public static long[][] RLongss(int len) => new long[len][].Select(_ => RLongs()).ToArray();
-            public static double[][] RDoubless(int len) => new double[len][].Select(_ => RDoubles()).ToArray();
-            public static int[][] RIntss(int len, Func<int, int> func) => new int[len][].Select(_ => RInts(func)).ToArray();
-            public static long[][] RLongss(int len, Func<long, long> func) => new long[len][].Select(_ => RLongs(func)).ToArray();
-            public static double[][] RDoubless(int len, Func<double, double> func) => new double[len][].Select(_ => RDoubles(func)).ToArray();
             private static T ChType<T>(string r) => (T)Convert.ChangeType(r, typeof(T));
             public static T1 RTuple<T1>()
             {
-                var r = RString();
+                var r = RStr();
                 return ChType<T1>(r);
             }
             public static (T1, T2) RTuple<T1, T2>()
             {
-                var r = RStrings();
+                var r = RStrs();
                 return (ChType<T1>(r[0]), ChType<T2>(r[1]));
             }
             public static (T1, T2, T3) RTuple<T1, T2, T3>()
             {
-                var r = RStrings();
+                var r = RStrs();
                 return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]));
             }
             public static (T1, T2, T3, T4) RTuple<T1, T2, T3, T4>()
             {
-                var r = RStrings();
+                var r = RStrs();
                 return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]));
             }
             public static (T1, T2, T3, T4, T5) RTuple<T1, T2, T3, T4, T5>()
             {
-                var r = RStrings();
+                var r = RStrs();
                 return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]), ChType<T5>(r[4]));
             }
             //N行入力 => (T1,T2..)[N]
             public static (T1, T2)[] RTuples<T1, T2>(int N) => new (T1, T2)[N].Select(_ => _ = RTuple<T1, T2>()).ToArray();
             public static (T1, T2, T3)[] RTuples<T1, T2, T3>(int N) => new (T1, T2, T3)[N].Select(_ => _ = RTuple<T1, T2, T3>()).ToArray();
             public static (T1, T2, T3, T4)[] RTuples<T1, T2, T3, T4>(int N) => new (T1, T2, T3, T4)[N].Select(_ => _ = RTuple<T1, T2, T3, T4>()).ToArray();
-            /*
-            public static T1[] ReadTuples<T1>(int N) //N行の入力 => T[N]出力
-            {
-                var res = new T1[N];
-                for (int i = 0; i < N; i++) res[i] = ChangeType<T1>(RString());
-                return res;
-            }
-            public static (T1[], T2[]) ReadTuples<T1, T2>(int N) //N行入力 => (T1[],T2[])
-            {
-                var (r1, r2) = (new T1[N], new T2[N]);
-                for (int i = 0; i < N; i++) (r1[i], r2[i]) = ReadTuple<T1, T2>();
-                return (r1, r2);
-            }
-            public static (T1[], T2[], T3[]) ReadTuples<T1, T2, T3>(int N)
-            {
-                var (r1, r2, r3) = (new T1[N], new T2[N], new T3[N]);
-                for (int i = 0; i < N; i++) (r1[i], r2[i], r3[i]) = ReadTuple<T1, T2, T3>();
-                return (r1, r2, r3);
-            }
-            public static (T1[], T2[], T3[], T4[]) ReadTuples<T1, T2, T3, T4>(int N)
-            {
-                var (r1, r2, r3, r4) = (new T1[N], new T2[N], new T3[N], new T4[N]);
-                for (int i = 0; i < N; i++) (r1[i], r2[i], r3[i], r4[i]) = ReadTuple<T1, T2, T3, T4>();
-                return (r1, r2, r3, r4);
-            }
-            */
         }
         public static class CollictionExtension
         {
@@ -299,6 +291,7 @@ namespace LIB340
                 }
                 return res;
             }
+
             //進数変換
             public static int[] ConvertBase(long sourse, int b)
             {
@@ -318,6 +311,8 @@ namespace LIB340
                 }
                 return ans.ToArray();
             }
+
+            //順列列挙
             public static IEnumerable<IEnumerable<T>> Permutation<T>(IEnumerable<T> source)
             {
                 var items = source.ToArray();
@@ -346,6 +341,7 @@ namespace LIB340
                     if (count == fact) yield break;
                 }
             }
+
         }
 
         // 1000000007でModした計算
@@ -430,7 +426,7 @@ namespace LIB340
             }
             public ModMat(int[,] _mat)
             {
-                Size = _mat.Length;
+                Size = _mat.GetLength(0);
                 Data = new long[Size, Size];
                 Array.Copy(_mat, Data, Size * Size);
             }
@@ -1795,16 +1791,16 @@ namespace TEST
     /// </summary>
     namespace CHANGEABLEGRAPH
     {
-        class Graph<TVertex, TEdge>
+        class Graph<TEdge>
         {
             int maxsize = 0;
             bool arrowexpand = true;
-            private Node<TVertex, TEdge>[] G;
+            private Node<TEdge>[] G;
             public Graph(int size = 4)
             {
                 arrowexpand = size == 4;
                 maxsize = size;
-                G = new Node<TVertex, TEdge>[size].Select(_ => _ = new Node<TVertex, TEdge>()).ToArray();
+                G = new Node<TEdge>[size].Select(_ => _ = new Node< TEdge>()).ToArray();
             }
             public void Add(Edge<TEdge> edge)
             {
@@ -1831,21 +1827,19 @@ namespace TEST
             private void Expand()
             {
                 if (!arrowexpand) throw new Exception("グラフが指定したサイズを超える入力を受け取りました。");
-                var temp = new Node<TVertex, TEdge>[maxsize *= 2].Select(_ => _ = new Node<TVertex, TEdge>()).ToArray();
+                var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node< TEdge>()).ToArray();
                 Array.Copy(G, temp, G.Length);
                 G = temp;
             }
             public int Length => G.Length;
-            public Node<TVertex, TEdge> this[int i] => G[i];
-            public IEnumerator<Node<TVertex, TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
+            public Node< TEdge> this[int i] => G[i];
+            public IEnumerator<Node<TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
         }
-        class Graph<TEdge> : Graph<TEdge, TEdge> { public Graph(int size = 4) : base(size) { } }
-        class Graph : Graph<int, int> { public Graph(int size = 4) : base(size) { } }
-        public class Node<Tvertex, Tedge>
+        class Graph : Graph<int> { public Graph(int size = 4) : base(size) { } }
+        public class Node<Tedge>
         {
-            public Tvertex vertex = default;
             public Dictionary<int, Edge<Tedge>> edges = new Dictionary<int, Edge<Tedge>>();
-            public static implicit operator List<Edge<Tedge>>(Node<Tvertex, Tedge> node) => node.edges.Values.ToList();
+            public static implicit operator List<Edge<Tedge>>(Node<Tedge> node) => node.edges.Values.ToList();
             public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.Values.GetEnumerator();
             public Edge<Tedge> this[int i] { get => edges.TryGetValue(i, out Edge<Tedge> edge) ? edge : default; set => edges[i] = value; }
         }
@@ -1853,115 +1847,6 @@ namespace TEST
         {
             public int From, To;
             public T Value;
-        }
-    }
-    namespace OldGraph
-    {
-        class Graph<TVertex, TEdge>
-        {
-            int maxsize = 0;
-            private Node<TVertex, TEdge>[] G;
-            public Graph(int size = 1024)
-            {
-                maxsize = size;
-                G = new Node<TVertex, TEdge>[size].Select(_ => _ = new Node<TVertex, TEdge>()).ToArray();
-            }
-            public void Add(Edge<TEdge> edge)
-            {
-                while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
-                G[edge.From].edges.Add(edge);
-            }
-            public void AddBoth(Edge<TEdge> edge)
-            {
-                Add(edge);
-                Add(new Edge<TEdge> { From = edge.To, To = edge.From, Value = edge.Value });
-            }
-            private void Expand()
-            {
-                var temp = new Node<TVertex, TEdge>[maxsize *= 2].Select(_ => _ = new Node<TVertex, TEdge>()).ToArray();
-                Array.Copy(G, temp, G.Length);
-                G = temp;
-            }
-            public IEnumerable<Edge<TEdge>> GetEdges()
-            {
-                foreach (var node in G)
-                    foreach (var edge in node)
-                        yield return edge;
-            }
-            public int Length => G.Length;
-            public Node<TVertex, TEdge> this[int i] => G[i];
-            public IEnumerator<Node<TVertex, TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
-        }
-        class Graph<TEdge> : Graph<TEdge, TEdge> { }
-        class Graph : Graph<int, int> { }
-        public class Node<Tvertex, Tedge>
-        {
-            public Tvertex vertex = default;
-            public List<Edge<Tedge>> edges = new List<Edge<Tedge>>();
-            public static implicit operator List<Edge<Tedge>>(Node<Tvertex, Tedge> node) => node.edges;
-            public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.GetEnumerator();
-        }
-        public struct Edge<T>
-        {
-            public int From, To;
-            public T Value;
-        }
-    }
-    namespace NextGraph
-    {
-        class Graph<TEdge>
-        {
-            int maxsize = 0;
-            private Node<TEdge>[] G;
-            public Graph(int size = 1024)
-            {
-                maxsize = size;
-                G = new Node<TEdge>[size].Select(_ => _ = new Node<TEdge>()).ToArray();
-            }
-            public void Add(Edge<TEdge> edge)
-            {
-                while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
-                G[edge.From].edges.Add(edge);
-            }
-            public void AddBoth(Edge<TEdge> edge)
-            {
-                Add(edge);
-                Add(new Edge<TEdge> { From = edge.To, To = edge.From, Value = edge.Value });
-            }
-            private void Expand()
-            {
-                var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node<TEdge>()).ToArray();
-                Array.Copy(G, temp, G.Length);
-                G = temp;
-            }
-            public IEnumerable<Edge<TEdge>> GetEdges()
-            {
-                foreach (var node in G)
-                    foreach (var edge in node)
-                        yield return edge;
-            }
-            public int Length => G.Length;
-            public Node<TEdge> this[int i] => G[i];
-            public IEnumerator<Node<TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
-        }
-        class Graph : Graph<int>
-        {
-            public Graph(int size = 1024) : base(size) { }
-        }
-        public class Node<Tedge>
-        {
-            public List<Edge<Tedge>> edges = new List<Edge<Tedge>>();
-            public static implicit operator List<Edge<Tedge>>(Node<Tedge> node) => node.edges;
-            public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.GetEnumerator();
-        }
-        public struct Edge<T>
-        {
-            public int From, To;
-            public T Value;
-            public Edge(int from, int to, T value = default)
-            {
-                From = from; To = to; Value = value;
-            }
         }
     }
 
@@ -2014,6 +1899,92 @@ namespace TEST
             return 0;
         }
     }
+
+    //独立な要素のみ格納されるQueue
+    class IndependentQueue<T>
+    {
+        Queue<T> que = new Queue<T>();
+        HashSet<T> hash = new HashSet<T>();
+        public IndependentQueue() { }
+        public void Enqueue(T item)
+        {
+            if (!hash.Contains(item))
+            {
+                que.Enqueue(item);
+            }
+        }
+        public T Dequeue()
+        {
+            var item = que.Dequeue();
+            hash.Remove(item);
+            return item;
+        }
+        public T Peek()
+        {
+            return que.Peek();
+        }
+        public int Count => hash.Count;
+    }
+
+
+
+
+
+    namespace Scanner
+    {
+        
+
+        /// <summary>
+        /// 事前には入力が決まらない場合はこちらを使います。
+        /// </summary>
+        public static class DynamicScanner
+        {
+            public static string RString() => Console.ReadLine();
+            public static int RInt() => RTuple<int>();
+            public static long RLong() => RTuple<long>();
+            public static double RDouble() => RTuple<double>();
+            public static string[] RStrings() => Console.ReadLine().Split();
+            public static int[] RInts() => Array.ConvertAll(RStrings(), int.Parse);
+            public static long[] RLongs() => Array.ConvertAll(RStrings(), long.Parse);
+            public static double[] RDoubles() => Array.ConvertAll(RStrings(), double.Parse);
+            public static int[] RInts(Func<int, int> func) => RInts().Select(func).ToArray();
+            public static long[] RLongs(Func<long, long> func) => RLongs().Select(func).ToArray();
+            public static double[] RDoubles(Func<double, double> func) => RDoubles().Select(func).ToArray();
+            public static int[][] RIntss(int len) => new int[len][].Select(_ => RInts()).ToArray();
+            public static long[][] RLongss(int len) => new long[len][].Select(_ => RLongs()).ToArray();
+            public static double[][] RDoubless(int len) => new double[len][].Select(_ => RDoubles()).ToArray();
+            public static int[][] RIntss(int len, Func<int, int> func) => new int[len][].Select(_ => RInts(func)).ToArray();
+            public static long[][] RLongss(int len, Func<long, long> func) => new long[len][].Select(_ => RLongs(func)).ToArray();
+            public static double[][] RDoubless(int len, Func<double, double> func) => new double[len][].Select(_ => RDoubles(func)).ToArray();
+            private static T ChType<T>(string r) => (T)Convert.ChangeType(r, typeof(T));
+            public static T1 RTuple<T1>()
+            {
+                var r = RString();
+                return ChType<T1>(r);
+            }
+            public static (T1, T2) RTuple<T1, T2>()
+            {
+                var r = RStrings();
+                return (ChType<T1>(r[0]), ChType<T2>(r[1]));
+            }
+            public static (T1, T2, T3) RTuple<T1, T2, T3>()
+            {
+                var r = RStrings();
+                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]));
+            }
+            public static (T1, T2, T3, T4) RTuple<T1, T2, T3, T4>()
+            {
+                var r = RStrings();
+                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]));
+            }
+            public static (T1, T2, T3, T4, T5) RTuple<T1, T2, T3, T4, T5>()
+            {
+                var r = RStrings();
+                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]), ChType<T5>(r[4]));
+            }
+        }
+    }
+
 }
 #if test
 namespace SegTree
