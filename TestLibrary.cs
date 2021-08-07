@@ -8,8 +8,6 @@ using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 using BigInteger = System.Numerics.BigInteger;
 using StringBuilder = System.Text.StringBuilder;
 using LIB340.TEMPLATES;
-using LIB340.MathLIB;
-using LIB340.GURAFUExtensions;
 using LIB340.ALGORITHMS;
 using LIB340.SOMETHINGS;
 /// <summary>
@@ -44,646 +42,495 @@ using LIB340.SOMETHINGS;
 
 namespace LIB340
 {
-    namespace TEMPLATES
+
+    namespace MajorAlgolithm
     {
-        public static class StaticScanner
+        namespace MathLIB
         {
-            static System.IO.Stream reader;
-            static byte[] buffer = new byte[1024];
-            static int cursor = 0, length = 0;
-            static StaticScanner()
+            public static class MyMath
             {
-                reader = Console.OpenStandardInput();
-            }
-            public static string RStr()
-            {
-                var line = new System.Text.StringBuilder();
-                char c;
-                while (true)
+                //最大公約数
+                public static long GCD(long a, long b) => a == 0 ? b : GCD(b % a, a);
+                //ax + by = gcd(a,b)
+                public static (long x, long y) extGCD(long a, long b)
                 {
-                    if (cursor == length)
+                    if (a < b)
                     {
-                        length = reader.Read(buffer);
-                        cursor = 0;
-                        if (length == 0) break;
+                        var (x, y) = extGCD(b, a);
+                        return (y, x);
                     }
-                    c = (char)buffer[cursor++];
-                    if (c == '\n') break;
-                    line.Append(c);
-                }
-                return line.ToString();
-            }
-            public static int RInt() => RTuple<int>();
-            public static long RLong() => RTuple<long>();
-            public static double RDouble() => RTuple<double>();
-            public static string[] RStrs() => RStr().Split();
-            public static int[] RInts() => Array.ConvertAll(RStrs(), int.Parse);
-            public static long[] RLongs() => Array.ConvertAll(RStrs(), long.Parse);
-            public static double[] RDoubles() => Array.ConvertAll(RStrs(), double.Parse);
-            public static int[] RInts(Func<int, int> func) => RInts().Select(func).ToArray();
-            public static long[] RLongs(Func<long, long> func) => RLongs().Select(func).ToArray();
-            public static double[] RDoubles(Func<double, double> func) => RDoubles().Select(func).ToArray();
-            private static T ChType<T>(string r) => (T)Convert.ChangeType(r, typeof(T));
-            public static T1 RTuple<T1>()
-            {
-                var r = RStr();
-                return ChType<T1>(r);
-            }
-            public static (T1, T2) RTuple<T1, T2>()
-            {
-                var r = RStrs();
-                return (ChType<T1>(r[0]), ChType<T2>(r[1]));
-            }
-            public static (T1, T2, T3) RTuple<T1, T2, T3>()
-            {
-                var r = RStrs();
-                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]));
-            }
-            public static (T1, T2, T3, T4) RTuple<T1, T2, T3, T4>()
-            {
-                var r = RStrs();
-                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]));
-            }
-            public static (T1, T2, T3, T4, T5) RTuple<T1, T2, T3, T4, T5>()
-            {
-                var r = RStrs();
-                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]), ChType<T5>(r[4]));
-            }
-            //N行入力 => (T1,T2..)[N]
-            public static (T1, T2)[] RTuples<T1, T2>(int N) => new (T1, T2)[N].Select(_ => _ = RTuple<T1, T2>()).ToArray();
-            public static (T1, T2, T3)[] RTuples<T1, T2, T3>(int N) => new (T1, T2, T3)[N].Select(_ => _ = RTuple<T1, T2, T3>()).ToArray();
-            public static (T1, T2, T3, T4)[] RTuples<T1, T2, T3, T4>(int N) => new (T1, T2, T3, T4)[N].Select(_ => _ = RTuple<T1, T2, T3, T4>()).ToArray();
-        }
-        public static class CollictionExtension
-        {
-
-        }
-
-        public static class Template
-        {
-            public static void CopyTo<T>(this T[] source, T[] destination) => Array.Copy(source, destination, source.Length);
-            public static void CopyTo(this Array ary, Array dest) => Array.Copy(ary, dest, ary.Length);
-            public static void Fill<T>(this T[] ary, T init) => ary.AsSpan().Fill(init);
-            public static void Fill<T>(this T[,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0], ary.Length).Fill(init);
-            public static void Fill<T>(this T[,,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0, 0], ary.Length).Fill(init);
-            public static void Sort<T>(this T[] ary) where T : IComparable<T>
-            => Array.Sort(ary);
-            public static void Sort<T>(this T[] ary, Comparison<T> comp) where T : IComparable<T> => Array.Sort(ary, comp);
-            public static void Sort<T>(this T[] sourse, params T[][] dest) where T : IComparable<T>
-            {
-                var E = Enumerable.Range(0, sourse.Length).ToArray();
-                Array.Sort(sourse, E);
-                foreach (Span<T> item in dest)
-                {
-                    Span<T> cd = new T[item.Length];
-                    item.CopyTo(cd);
-                    for (int j = 0; j < sourse.Length; j++) item[j] = cd[E[j]];
-                }
-            }
-            public static void Reverse<T>(this T[] ary) where T : IComparable<T> => Array.Reverse(ary);
-            public static string JoinedString<T>(this IEnumerable<T> ary, string sep = " ") =>
-            string.Join(sep, ary);
-            public static void WriteLine<T>(T str) { Console.WriteLine(str.ToString()); }
-            public static bool ChMax<T>(ref this T value, T other) where T : struct, IComparable<T>
-            {
-                if (value.CompareTo(other) < 0)
-                {
-                    value = other;
-                    return true;
-                }
-                return false;
-            }
-            public static bool ChMin<T>(ref this T value, T other) where T : struct, IComparable<T>
-            {
-                if (value.CompareTo(other) > 0)
-                {
-                    value = other;
-                    return true;
-                }
-                return false;
-            }
-            public static void Swap<T>(ref this (T, T) item) =>
-        item = (item.Item2, item.Item1);
-            //[min,max]の範囲内かどうか
-            public static bool IsBetween<T>(ref this T value, T min, T max) where T : struct, IComparable<T>
-            {
-                return 0 <= value.CompareTo(min) && value.CompareTo(max) < 0;
-            }
-            public static string YESNO(bool b) => b ? "YES" : "NO";
-            public static string YesNo(bool b) => b ? "Yes" : "No";
-            public static string yesno(bool b) => b ? "yes" : "no";
-            public static readonly int Inf = int.MaxValue / 2;
-            public static readonly long InfL = long.MaxValue / 4;
-            public static readonly (int, int)[] DD4 = new (int y, int x)[4] { (1, 0), (0, 1), (-1, 0), (0, -1) };
-            public static readonly (int, int)[] DD8 = new (int y, int x)[8] { (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1) };
-        }
-        
-
-        /// <summary>
-        /// 
-        /// </summary>
-        namespace Debug
-        {
-            /// <summary>
-            /// 入力ファイルから読み込み、出力ファイルに出力する。
-            /// 実行ディレクトリにinput.txtとoutput.txtを置くこと
-            /// インスタンス名にConsoleとつけることで入力の置き換えが可能
-            /// </summary>
-            public class FileIO
-            {
-                string INPUTPATH, OUTPUTPATH;
-                string[] alllines;
-                public FileIO(string inpath = @"input.txt", string outpath = @"output.txt")
-                {
-                    INPUTPATH = inpath;
-                    OUTPUTPATH = outpath;
-                    alllines = File.ReadAllLines(inpath);
-                    Clear();
-                }
-                int currentline = 0;
-                public string ReadLine()
-                {
-                    if (alllines.Length <= currentline) throw new Exception("ファイルの終わりに到達しました。");
-                    return alllines[currentline++];
-                }
-                public string[] ReadAllLines()
-                {
-                    string[] copy = new string[alllines.Length];
-                    Array.Copy(alllines, copy, alllines.Length);
-                    return alllines;
-                }
-                public void WriteLine(string str)
-                {
-                    File.AppendAllText(OUTPUTPATH, str + Environment.NewLine);
-                }
-                public void Clear()
-                {
-                    File.WriteAllText(OUTPUTPATH, "");
-                }
-                public string GetOutputPath => Directory.GetCurrentDirectory() + "/" + OUTPUTPATH;
-                public string GetInput => Directory.GetCurrentDirectory() + "/" + INPUTPATH;
-            }
-        }
-        static class RandomInput 
-        {
-            //"using staticを置き換えることで入力をランダムにする" ことが目標
-            public static Random Rand = new Random(DateTime.Now.Millisecond);
-            public static int RandomInt(int min, int max) => Rand.Next(min, max);
-            public static string RandomString(int min = 4, int max = 8) => string.Join("", new char[RandomInt(min, max)].Select(_ => (char)('a' + RandomInt(0, 26))).ToArray());
-            public static int[] RandomArray(int leng, int minvalue, int maxvalue) => new int[leng].Select(_ => Rand.Next(minvalue, maxvalue)).ToArray();
-            /// <summary>ランダムなbool[H,W]を作る</summary>
-            static bool[,] randommap(int H, int W, float freq)
-            {
-                Random rand = new Random();
-                var res = new bool[H, W];
-                for (int i = 0; i < H; i++)
-                {
-                    for (int j = 0; j < W; j++)
-                    {
-                        res[i, j] = rand.NextDouble() <= freq;
-                    }
-                }
-                return res;
-            }
-            public static int RInt() => RandomInt(1, 10);
-            public static int[] RInts() => RandomArray(10, 0, 10);
-            //var sw = new System.IO.StreamWriter(Console.OpenStandardOutput()) { AutoFlush = false };
-            //Console.SetOut(sw);
-            //Console.Out.Flush();
-        }
-    }
-
-
-
-
-    namespace MathLIB
-    {
-        public static class MyMath
-        {
-            //最大公約数
-            public static long GCD(long a, long b) => a == 0 ? b : GCD(b % a, a);
-            //ax + by = gcd(a,b)
-            public static (long x, long y) extGCD(long a, long b)
-            {
-                if (a < b)
-                {
-                    var (x, y) = extGCD(b, a);
-                    return (y, x);
-                }
-                if (b == 0) return (1, 0);
-                else
-                {
-                    var t = extGCD(b, a % b);
-                    return (t.y, t.x - a / b * t.y);
-                }
-            }
-            //最小公倍数
-            public static long LCM(long a, long b) => a / GCD(a, b) * b;
-
-            public static long ModPow(long a, long n, long mod)
-            {
-                long res = 1;
-                while (n > 0)
-                {
-                    if ((n & 1) >= 1) res = res * a % mod;
-                    a = a * a % mod;
-                    n >>= 1;
-                }
-                return res;
-            }
-
-            //進数変換
-            public static int[] ConvertBase(long sourse, int b)
-            {
-                long num = 1;
-                while (num <= sourse)
-                {
-                    num *= b;
-                }
-                num /= b;
-                List<int> ans = new List<int>();
-                while (num >= 1)
-                {
-                    int c = (int)(sourse / num);
-                    ans.Add(c);
-                    sourse -= num * c;
-                    num /= b;
-                }
-                return ans.ToArray();
-            }
-
-            //順列列挙
-            public static IEnumerable<IEnumerable<T>> Permutation<T>(IEnumerable<T> source)
-            {
-                var items = source.ToArray();
-                yield return items;
-                var counter = new int[items.Length];
-                var idx = 0;
-                var count = 0;
-                var fact = 1L;
-                for (var i = 1; i <= items.Length; i++) fact *= i;
-                while (idx < items.Length)
-                {
-                    if (counter[idx] < idx)
-                    {
-                        if (idx % 2 == 0) (items[0], items[idx]) = (items[idx], items[0]);
-                        else (items[counter[idx]], items[idx]) = (items[idx], items[counter[idx]]);
-                        yield return items;
-                        counter[idx]++;
-                        count++;
-                        idx = 0;
-                    }
+                    if (b == 0) return (1, 0);
                     else
                     {
-                        counter[idx] = 0;
-                        idx++;
-                    }
-                    if (count == fact) yield break;
-                }
-            }
-
-        }
-
-        // 1000000007でModした計算
-        //静的な値で剰余した値を返します。
-        struct Modular
-        {
-            const int M = 1000000007;
-            const int arysize = 2000001;
-            long value;
-            public Modular(long value = 0) { this.value = value; }
-            public override string ToString() { return value.ToString(); }
-            public static implicit operator Modular(long a)
-            {
-                var m = a % M;
-                return new Modular((m < 0) ? m + M : m);
-            }
-            public static Modular operator +(Modular a, Modular b) => a.value + b.value;
-            public static Modular operator -(Modular a, Modular b) => a.value - b.value;
-            public static Modular operator *(Modular a, Modular b) => a.value * b.value;
-            public static Modular operator /(Modular a, Modular b) => a * Pow(b, M - 2);
-            public static Modular operator ++(Modular a) => a.value + 1;
-            public static Modular operator --(Modular a) => a.value - 1;
-            public static Modular Pow(Modular a, long n)
-            {
-                Modular ans = 1;
-                for (; n > 0; n >>= 1, a *= a)
-                {
-                    if ((n & 1) == 1) ans *= a;
-                }
-                return ans;
-            }
-            static int[] facs = new int[arysize];
-            static int facscount = -1;
-            public static Modular Fac(int n)   //階乗
-            {
-                facs[0] = 1;
-                while (facscount <= n)
-                {
-                    facs[++facscount + 1] = (int)(Math.BigMul(facs[facscount], facscount + 1) % M);
-                }
-                return facs[n];
-            }
-            public static Modular Fac(int r, int n)//記録しない階乗
-            {
-                int temp = 1;
-                for (int i = r; i <= n; i++)
-                {
-                    temp = (int)(Math.BigMul(temp, i) % M);
-                }
-                return temp;
-            }
-            public static Modular Ncr(int n, int r) //nCr
-            {
-                return (n < r) ? 0
-                     : (n == r) ? 1
-                                : (Math.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
-                                    : Fac(n - r + 1, n) / Fac(r);
-            }
-            public static Modular Npr(int n, int r)
-            {
-                if (Math.Max(n, r) <= arysize) return Fac(n) / Fac(n - r);
-                return Fac(n - r + 1, n);
-            }
-            public static explicit operator int(Modular a)
-            {
-                return (int)a.value;
-            }
-        }
-
-        /// <summary>
-        /// 値がModされる 行列を扱います
-        /// TODO 最低限の機能しかありません
-        /// </summary>
-        class ModMat
-        {
-            long[,] Data;
-            static readonly long Mod = 1000000007;
-            public ModMat(int _size)
-            {
-                Size = _size;
-                Data = new long[Size, Size];
-            }
-            public ModMat(int[,] _mat)
-            {
-                Size = _mat.GetLength(0);
-                Data = new long[Size, Size];
-                Array.Copy(_mat, Data, Size * Size);
-            }
-            public int Size { get; }
-            public long this[int i, int j]
-            {
-                get => Data[i, j];
-                set { Data[i, j] = value; Data[i, j] %= Mod; }
-            }
-            public static ModMat operator +(ModMat A, ModMat B)
-            {
-                if (A.Size != B.Size) throw new Exception($"ex at'+' a.size={A.Size} b.size={B.Size}");
-                for (int i = 0; i < A.Size; i++)
-                {
-                    for (int j = 0; j < A.Size; j++)
-                    {
-                        A[i, j] = (A[i, j] + B[i, j]) % Mod;
+                        var t = extGCD(b, a % b);
+                        return (t.y, t.x - a / b * t.y);
                     }
                 }
-                return A;
-            }
-            public static ModMat operator -(ModMat A, ModMat B)
-            {
-                if (A.Size != B.Size) throw new Exception($"ex at'-' a.size={A.Size} b.size={B.Size}");
-                for (int i = 0; i < A.Size; i++)
+                //最小公倍数
+                public static long LCM(long a, long b) => a / GCD(a, b) * b;
+
+                public static long ModPow(long a, long n, long mod)
                 {
-                    for (int j = 0; j < A.Size; j++)
+                    long res = 1;
+                    while (n > 0)
                     {
-                        A[i, j] = (A[i, j] - B[i, j] + Mod) % Mod;
+                        if ((n & 1) >= 1) res = res * a % mod;
+                        a = a * a % mod;
+                        n >>= 1;
                     }
+                    return res;
                 }
-                return A;
-            }
-            public static ModMat operator *(ModMat A, ModMat B)
-            {
-                if (A.Size != B.Size) throw new Exception($"ex at'*' a.size={A.Size} b.size={B.Size}");
-                int N = A.Size;
-                var c = new ModMat(N);
-                for (int i = 0; i < N; i++)
+
+                //進数変換
+                public static int[] ConvertBase(long sourse, int b)
                 {
-                    for (int k = 0; k < N; k++)
+                    long num = 1;
+                    while (num <= sourse)
                     {
-                        for (int j = 0; j < N; j++)
+                        num *= b;
+                    }
+                    num /= b;
+                    List<int> ans = new List<int>();
+                    while (num >= 1)
+                    {
+                        int c = (int)(sourse / num);
+                        ans.Add(c);
+                        sourse -= num * c;
+                        num /= b;
+                    }
+                    return ans.ToArray();
+                }
+
+                //順列列挙
+                public static IEnumerable<IEnumerable<T>> Permutation<T>(IEnumerable<T> source)
+                {
+                    var items = source.ToArray();
+                    yield return items;
+                    var counter = new int[items.Length];
+                    var idx = 0;
+                    var count = 0;
+                    var fact = 1L;
+                    for (var i = 1; i <= items.Length; i++) fact *= i;
+                    while (idx < items.Length)
+                    {
+                        if (counter[idx] < idx)
                         {
-                            c[i, j] = (c[i, j] + A[i, k] * B[k, j]) % Mod;
+                            if (idx % 2 == 0) (items[0], items[idx]) = (items[idx], items[0]);
+                            else (items[counter[idx]], items[idx]) = (items[idx], items[counter[idx]]);
+                            yield return items;
+                            counter[idx]++;
+                            count++;
+                            idx = 0;
                         }
+                        else
+                        {
+                            counter[idx] = 0;
+                            idx++;
+                        }
+                        if (count == fact) yield break;
                     }
                 }
-                return c;
+
             }
-            public static ModMat operator *(ModMat A, long b)
+
+            // 1000000007でModした計算
+            //静的な値で剰余した値を返します。
+            struct Modular
             {
-                var C = new ModMat(A.Size);
-                for (int i = 0; i < A.Size; i++)
+                const int M = 1000000007;
+                const int arysize = 2000001;
+                long value;
+                public Modular(long value = 0) { this.value = value; }
+                public override string ToString() { return value.ToString(); }
+                public static implicit operator Modular(long a)
                 {
-                    for (int j = 0; j < A.Size; j++)
+                    var m = a % M;
+                    return new Modular((m < 0) ? m + M : m);
+                }
+                public static Modular operator +(Modular a, Modular b) => a.value + b.value;
+                public static Modular operator -(Modular a, Modular b) => a.value - b.value;
+                public static Modular operator *(Modular a, Modular b) => a.value * b.value;
+                public static Modular operator /(Modular a, Modular b) => a * Pow(b, M - 2);
+                public static Modular operator ++(Modular a) => a.value + 1;
+                public static Modular operator --(Modular a) => a.value - 1;
+                public static Modular Pow(Modular a, long n)
+                {
+                    Modular ans = 1;
+                    for (; n > 0; n >>= 1, a *= a)
                     {
-                        C[i, j] = A[i, j] * b % Mod;
+                        if ((n & 1) == 1) ans *= a;
                     }
+                    return ans;
                 }
-                return C;
-            }
-            public static ModMat Pow(ModMat A, long n)
-            {
-                ModMat B = new ModMat(A.Size);
-                for (int i = 0; i < A.Size; i++)
+                static int[] facs = new int[arysize];
+                static int facscount = -1;
+                public static Modular Fac(int n)   //階乗
                 {
-                    B[i, i] = 1;
+                    facs[0] = 1;
+                    while (facscount <= n)
+                    {
+                        facs[++facscount + 1] = (int)(Math.BigMul(facs[facscount], facscount + 1) % M);
+                    }
+                    return facs[n];
                 }
-                while (n > 0)
+                public static Modular Fac(int r, int n)//記録しない階乗
                 {
-                    if ((n & 1) == 1) B *= A;
-                    A = A * A;
-                    n >>= 1;
+                    int temp = 1;
+                    for (int i = r; i <= n; i++)
+                    {
+                        temp = (int)(Math.BigMul(temp, i) % M);
+                    }
+                    return temp;
                 }
-                return B;
+                public static Modular Ncr(int n, int r) //nCr
+                {
+                    return (n < r) ? 0
+                         : (n == r) ? 1
+                                    : (Math.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
+                                        : Fac(n - r + 1, n) / Fac(r);
+                }
+                public static Modular Npr(int n, int r)
+                {
+                    if (Math.Max(n, r) <= arysize) return Fac(n) / Fac(n - r);
+                    return Fac(n - r + 1, n);
+                }
+                public static explicit operator int(Modular a)
+                {
+                    return (int)a.value;
+                }
             }
-        }
 
-    }
-
-
-
-
-    namespace GURAFUExtensions
-    {
-        using Graph;
-        namespace Graph
-        {
             /// <summary>
-            /// 隣接リスト(グラフ) サイズの自動拡張機能つき
-            /// new時にサイズ指定するとサイズは固定
-            /// 辺重複可
+            /// 値がModされる 行列を扱います
+            /// TODO 最低限の機能しかありません
             /// </summary>
-            /// <typeparam name="TEdge"></typeparam>
-            class Graph<TEdge>
+            class ModMat
             {
-                int maxsize = 0;
-                private Node<TEdge>[] G;
-                public Graph(int size = 1024)
+                long[,] Data;
+                static readonly long Mod = 1000000007;
+                public ModMat(int _size)
                 {
-                    maxsize = size;
-                    G = new Node<TEdge>[size].Select(_ => _ = new Node<TEdge>()).ToArray();
+                    Size = _size;
+                    Data = new long[Size, Size];
                 }
-                public void Add(Edge<TEdge> edge)
+                public ModMat(int[,] _mat)
                 {
-                    while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
-                    G[edge.From].edges.Add(edge);
+                    Size = _mat.GetLength(0);
+                    Data = new long[Size, Size];
+                    Array.Copy(_mat, Data, Size * Size);
                 }
-                public void AddBoth(Edge<TEdge> edge)
+                public int Size { get; }
+                public long this[int i, int j]
                 {
-                    Add(edge);
-                    Add(new Edge<TEdge> { From = edge.To, To = edge.From, Value = edge.Value });
+                    get => Data[i, j];
+                    set { Data[i, j] = value; Data[i, j] %= Mod; }
                 }
-                private void Expand()
+                public static ModMat operator +(ModMat A, ModMat B)
                 {
-                    var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node<TEdge>()).ToArray();
-                    Array.Copy(G, temp, G.Length);
-                    G = temp;
-                }
-                public IEnumerable<Edge<TEdge>> GetEdges()
-                {
-                    foreach (var node in G)
-                        foreach (var edge in node)
-                            yield return edge;
-                }
-                public int Length => G.Length;
-                public Node<TEdge> this[int i] => G[i];
-                public IEnumerator<Node<TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
-            }
-            class Graph : Graph<int>
-            {
-                public Graph(int size = 1024) : base(size) { }
-            }
-            public class Node<Tedge>
-            {
-                public List<Edge<Tedge>> edges = new List<Edge<Tedge>>();
-                public static implicit operator List<Edge<Tedge>>(Node<Tedge> node) => node.edges;
-                public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.GetEnumerator();
-            }
-            public struct Edge<T>
-            {
-                public int From, To;
-                public T Value;
-                public Edge(int from, int to, T value = default)
-                {
-                    From = from; To = to; Value = value;
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// ダイクストラ 有向グラフの拡張メソッド 始点から各頂点までの最小コストを求める
-        /// 先に実装する [優先キュー] [グラフ]
-        /// Search : O(ElogV)
-        /// </summary>
-        static class Dijkstraa
-        {
-            public static long dijkstra<T>(this Graph<T> G, int from, int to) => dijkstra(G, from)[to];
-            public static long dijkstra<T>(this Graph<T> G, int from, int to, Comparison<(int to, long cost)> comp) => dijkstra(G, from, comp)[to];
-            public static long[] dijkstra<T>(this Graph<T> G, int from) => dijkstra(G, from, (x, y) => x.cost.CompareTo(y.cost));
-            public static long[] dijkstra<T>(this Graph<T> G, int from, Comparison<(int to, long cost)> comp)
-            {
-                var d = Enumerable.Repeat(long.MaxValue / 4, G.Length).ToArray();
-                var que = new PriorityQueue<(int to, long cost)>(comp);
-                d[from] = 0;
-                que.Enqueue((from, 0));
-                while (que.Count > 0)
-                {
-                    var (v,c) = que.Dequeue();
-                    if (d[v] < c) continue;
-                    foreach (var edge in G[v])
+                    if (A.Size != B.Size) throw new Exception($"ex at'+' a.size={A.Size} b.size={B.Size}");
+                    for (int i = 0; i < A.Size; i++)
                     {
-                        long ecost = ChLong(edge.Value);
-
-                        int nv = edge.To;
-                        long nc = d[v] + ecost;
-                        if (d[nv] > nc)
+                        for (int j = 0; j < A.Size; j++)
                         {
-                            que.Enqueue((nv, d[nv] = nc));
+                            A[i, j] = (A[i, j] + B[i, j]) % Mod;
                         }
                     }
+                    return A;
                 }
-                return d;
-            }
-            static long ChLong(object value)=> (long)Convert.ChangeType(value, typeof(long));
-        }
-
-        /// <summary>
-        /// 最小全域木　無向グラフの拡張メソッド
-        /// 全区間のコストの和も求める
-        /// UnionFindを先に実装すること
-        /// </summary>
-        static class Kruskal
-        {
-            public static Graph<long> MinimumSpanningTree(this Graph<long> G, Comparison<Edge<long>> comp = null)
-            {
-                comp ??= (a, b) => a.Value.CompareTo(b.Value);
-                var res = new Graph<long>();
-                var union = new UnionFind(G.Length);
-                var edges = G.GetEdges().ToArray();
-                Array.Sort(edges, comp);
-                foreach (var e in edges)
+                public static ModMat operator -(ModMat A, ModMat B)
                 {
-                    if (union.IsSame(e.From, e.To)) continue;
-                    union.Unite(e.From, e.To);
-                    res.AddBoth(new Edge<long> { From = e.From, To = e.To, Value = e.Value });
-                }
-                return res;
-            }
-            public static long CostSum(this Graph<long> G)
-            {
-                var res = 0L;
-                foreach (var item in G.GetEdges())
-                {
-                    res += item.Value;
-                }
-                return res / 2;
-            }
-        }
-
-        // トポロジカルソート 
-        static class TopologicalSort
-        {
-            //Degreesはその頂点にのびる辺の数 無理ならnullを返す
-            public static List<int> Topologicalsort(Graph<int> G, int[] Degrees)
-            {
-                var que = new Queue<int>();
-                for (int i = 0; i < Degrees.Length; i++)
-                {
-                    if (Degrees[i] == 0) que.Enqueue(i);
-                }
-                var sorted = new List<int>();
-                while (que.Count > 0)
-                {
-                    var v = que.Dequeue();
-                    sorted.Add(v);
-                    foreach (var i in G[v])
+                    if (A.Size != B.Size) throw new Exception($"ex at'-' a.size={A.Size} b.size={B.Size}");
+                    for (int i = 0; i < A.Size; i++)
                     {
-                        Degrees[i.To]--;
-                        if (Degrees[i.To] == 0) que.Enqueue(i.To);
+                        for (int j = 0; j < A.Size; j++)
+                        {
+                            A[i, j] = (A[i, j] - B[i, j] + Mod) % Mod;
+                        }
+                    }
+                    return A;
+                }
+                public static ModMat operator *(ModMat A, ModMat B)
+                {
+                    if (A.Size != B.Size) throw new Exception($"ex at'*' a.size={A.Size} b.size={B.Size}");
+                    int N = A.Size;
+                    var c = new ModMat(N);
+                    for (int i = 0; i < N; i++)
+                    {
+                        for (int k = 0; k < N; k++)
+                        {
+                            for (int j = 0; j < N; j++)
+                            {
+                                c[i, j] = (c[i, j] + A[i, k] * B[k, j]) % Mod;
+                            }
+                        }
+                    }
+                    return c;
+                }
+                public static ModMat operator *(ModMat A, long b)
+                {
+                    var C = new ModMat(A.Size);
+                    for (int i = 0; i < A.Size; i++)
+                    {
+                        for (int j = 0; j < A.Size; j++)
+                        {
+                            C[i, j] = A[i, j] * b % Mod;
+                        }
+                    }
+                    return C;
+                }
+                public static ModMat Pow(ModMat A, long n)
+                {
+                    ModMat B = new ModMat(A.Size);
+                    for (int i = 0; i < A.Size; i++)
+                    {
+                        B[i, i] = 1;
+                    }
+                    while (n > 0)
+                    {
+                        if ((n & 1) == 1) B *= A;
+                        A = A * A;
+                        n >>= 1;
+                    }
+                    return B;
+                }
+            }
+
+        }
+
+
+        namespace GraphExtension
+        {
+                /// <summary>
+                /// 隣接リスト(グラフ) サイズの自動拡張機能つき
+                /// new時にサイズ指定するとサイズは固定
+                /// 辺重複可
+                /// </summary>
+                /// <typeparam name="TEdge"></typeparam>
+                class Graph<TEdge>
+                {
+                    int maxsize = 0;
+                    private Node<TEdge>[] G;
+                    public Graph(int size = 1024)
+                    {
+                        maxsize = size;
+                        G = new Node<TEdge>[size].Select(_ => _ = new Node<TEdge>()).ToArray();
+                    }
+                    public void Add(Edge<TEdge> edge)
+                    {
+                        while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
+                        G[edge.From].edges.Add(edge);
+                    }
+                    public void AddBoth(Edge<TEdge> edge)
+                    {
+                        Add(edge);
+                        Add(new Edge<TEdge> { From = edge.To, To = edge.From, Value = edge.Value });
+                    }
+                    private void Expand()
+                    {
+                        var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node<TEdge>()).ToArray();
+                        Array.Copy(G, temp, G.Length);
+                        G = temp;
+                    }
+                    public IEnumerable<Edge<TEdge>> GetEdges()
+                    {
+                        foreach (var node in G)
+                            foreach (var edge in node)
+                                yield return edge;
+                    }
+                    public int Length => G.Length;
+                    public Node<TEdge> this[int i] => G[i];
+                    public IEnumerator<Node<TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
+                }
+                class Graph : Graph<int>
+                {
+                    public Graph(int size = 1024) : base(size) { }
+                }
+                public class Node<Tedge>
+                {
+                    public List<Edge<Tedge>> edges = new List<Edge<Tedge>>();
+                    public static implicit operator List<Edge<Tedge>>(Node<Tedge> node) => node.edges;
+                    public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.GetEnumerator();
+                }
+                public struct Edge<T>
+                {
+                    public int From, To;
+                    public T Value;
+                    public Edge(int from, int to, T value = default)
+                    {
+                        From = from; To = to; Value = value;
                     }
                 }
-                if (Degrees.Length != sorted.Count) return null;
-                return sorted;
+
+
+            /// <summary>
+            /// ダイクストラ 有向グラフの拡張メソッド 始点から各頂点までの最小コストを求める
+            /// 必要なライブラリ : [優先キュー] [グラフ]
+            /// Search : O(ElogV)
+            /// </summary>
+            static class Dijkstraa
+            {
+                public static long dijkstra<T>(this Graph<T> G, int from, int to) => dijkstra(G, from)[to];
+                public static long dijkstra<T>(this Graph<T> G, int from, int to, Comparison<(int to, long cost)> comp) => dijkstra(G, from, comp)[to];
+                public static long[] dijkstra<T>(this Graph<T> G, int from) => dijkstra(G, from, (x, y) => x.cost.CompareTo(y.cost));
+                public static long[] dijkstra<T>(this Graph<T> G, int from, Comparison<(int to, long cost)> comp)
+                {
+                    var d = Enumerable.Repeat(long.MaxValue / 4, G.Length).ToArray();
+                    var que = new PriorityQueue<(int to, long cost)>(comp);
+                    d[from] = 0;
+                    que.Enqueue((from, 0));
+                    while (que.Count > 0)
+                    {
+                        var (v, c) = que.Dequeue();
+                        if (d[v] < c) continue;
+                        foreach (var edge in G[v])
+                        {
+                            long ecost = ChLong(edge.Value);
+
+                            int nv = edge.To;
+                            long nc = d[v] + ecost;
+                            if (d[nv] > nc)
+                            {
+                                que.Enqueue((nv, d[nv] = nc));
+                            }
+                        }
+                    }
+                    return d;
+                }
+                static long ChLong(object value) => (long)Convert.ChangeType(value, typeof(long));
+            }
+
+
+
+            /// <summary>
+            /// 優先キュー (スニペット済)
+            /// Enqueue : O(logN)
+            /// Dequeue : O(logN)
+            /// Peek : O(1)
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            class PriorityQueue<T> : IEnumerable<T>, ICollection, IEnumerable, ICloneable
+            {
+                List<T> m_heap;
+                Comparison<T> Comp;
+                public int Count => m_heap.Count;
+                public bool IsEmpty => Count == 0;
+                public PriorityQueue(IEnumerable<T> source) : this(null, 16, source) { }
+                public PriorityQueue(int capacity = 16, IEnumerable<T> source = null) : this(null, capacity, source) { }
+                public PriorityQueue(Comparison<T> comp, IEnumerable<T> source) : this(comp, 16, source) { }
+                public PriorityQueue(Comparison<T> comp, int capacity = 16, IEnumerable<T> source = null) { this.Comp = comp == null ? (x, y) => Comparer<T>.Default.Compare(x, y) : comp; m_heap = new List<T>(capacity); if (source != null) foreach (var x in source) Enqueue(x); }
+                public void Enqueue(T x)
+                {
+                    var pos = Count;
+                    m_heap.Add(x);
+                    while (pos > 0)
+                    {
+                        var p = (pos - 1) / 2;
+                        if (Comp(m_heap[p], x) <= 0) break;
+                        m_heap[pos] = m_heap[p];
+                        pos = p;
+                    }
+                    m_heap[pos] = x;
+                }
+                public T Dequeue()
+                {
+                    var value = m_heap[0];
+                    var x = m_heap[Count - 1];
+                    m_heap.RemoveAt(Count - 1);
+                    if (Count == 0) return value;
+                    var pos = 0;
+                    while (pos * 2 + 1 < Count)
+                    {
+                        var a = 2 * pos + 1;
+                        var b = 2 * pos + 2;
+                        if (b < Count && Comp(m_heap[b], m_heap[a]) < 0) a = b;
+                        if (Comp(m_heap[a], x) >= 0) break;
+                        m_heap[pos] = m_heap[a];
+                        pos = a;
+                    }
+                    m_heap[pos] = x;
+                    return value;
+                }
+                public T Peek() => m_heap[0];
+                public IEnumerator<T> GetEnumerator() { var x = (PriorityQueue<T>)Clone(); while (x.Count > 0) yield return x.Dequeue(); }
+                void CopyTo(Array array, int index) { foreach (var x in this) array.SetValue(x, index++); }
+                public object Clone() { var x = new PriorityQueue<T>(Comp, Count); x.m_heap.AddRange(m_heap); return x; }
+                public void Clear() => m_heap = new List<T>();
+                public void TrimExcess() => m_heap.TrimExcess();
+                public bool Contains(T item) { return m_heap.Contains(item); } //O(N)
+                IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+                void ICollection.CopyTo(Array array, int index) => CopyTo(array, index);
+                bool ICollection.IsSynchronized => false;
+                object ICollection.SyncRoot => this;
+            }
+
+
+
+            /// <summary>
+            /// 最小全域木　無向グラフの拡張メソッド
+            /// 全区間のコストの和も求める
+            /// UnionFindを先に実装すること
+            /// </summary>
+            static class Kruskal
+            {
+                public static Graph<long> MinimumSpanningTree(this Graph<long> G, Comparison<Edge<long>> comp = null)
+                {
+                    comp ??= (a, b) => a.Value.CompareTo(b.Value);
+                    var res = new Graph<long>();
+                    var union = new UnionFind(G.Length);
+                    var edges = G.GetEdges().ToArray();
+                    Array.Sort(edges, comp);
+                    foreach (var e in edges)
+                    {
+                        if (union.IsSame(e.From, e.To)) continue;
+                        union.Unite(e.From, e.To);
+                        res.AddBoth(new Edge<long> { From = e.From, To = e.To, Value = e.Value });
+                    }
+                    return res;
+                }
+                public static long CostSum(this Graph<long> G)
+                {
+                    var res = 0L;
+                    foreach (var item in G.GetEdges())
+                    {
+                        res += item.Value;
+                    }
+                    return res / 2;
+                }
+            }
+
+
+            // トポロジカルソート 
+            static class TopologicalSort
+            {
+                //Degreesはその頂点にのびる辺の数 無理ならnullを返す
+                public static List<int> Topologicalsort(Graph<int> G, int[] Degrees)
+                {
+                    var que = new Queue<int>();
+                    for (int i = 0; i < Degrees.Length; i++)
+                    {
+                        if (Degrees[i] == 0) que.Enqueue(i);
+                    }
+                    var sorted = new List<int>();
+                    while (que.Count > 0)
+                    {
+                        var v = que.Dequeue();
+                        sorted.Add(v);
+                        foreach (var i in G[v])
+                        {
+                            Degrees[i.To]--;
+                            if (Degrees[i.To] == 0) que.Enqueue(i.To);
+                        }
+                    }
+                    if (Degrees.Length != sorted.Count) return null;
+                    return sorted;
+                }
             }
         }
 
-    }
+        
 
 
 
-
-    //アルゴリズムもデータ構造もごっちゃ
-    namespace ALGORITHMS
-    {
         /// <summary>
         /// 普通のUnionFind
         /// Unite：O(a(n)) aはアッカーマン関数の逆関数 3くらい
@@ -731,7 +578,7 @@ namespace LIB340
 
         /// <summary>
         /// 重み付きUnionFind
-        /// 初期化時に重みを入力しておく
+        /// 初期化時に重みを入力する
         /// 親にマージした値がのる
         /// TODO 普通のunionfindを継承したらコンパクトになりそう
         /// </summary>
@@ -836,127 +683,6 @@ namespace LIB340
         }
 
 
-        /// <summary>
-        /// 優先キュー (スニペット済)
-        /// Enqueue : O(logN)
-        /// Dequeue : O(logN)
-        /// Peek : O(1)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        class PriorityQueue<T> : IEnumerable<T>, ICollection, IEnumerable, ICloneable
-        {
-            List<T> m_heap;
-            Comparison<T> Comp;
-            public int Count => m_heap.Count;
-            public bool IsEmpty => Count == 0;
-            public PriorityQueue(IEnumerable<T> source) : this(null, 16, source) { }
-            public PriorityQueue(int capacity = 16, IEnumerable<T> source = null) : this(null, capacity, source) { }
-            public PriorityQueue(Comparison<T> comp, IEnumerable<T> source) : this(comp, 16, source) { }
-            public PriorityQueue(Comparison<T> comp, int capacity = 16, IEnumerable<T> source = null) { this.Comp = comp == null ? (x, y) => Comparer<T>.Default.Compare(x, y) : comp; m_heap = new List<T>(capacity); if (source != null) foreach (var x in source) Enqueue(x); }
-            public void Enqueue(T x)
-            {
-                var pos = Count;
-                m_heap.Add(x);
-                while (pos > 0)
-                {
-                    var p = (pos - 1) / 2;
-                    if (Comp(m_heap[p], x) <= 0) break;
-                    m_heap[pos] = m_heap[p];
-                    pos = p;
-                }
-                m_heap[pos] = x;
-            }
-            public T Dequeue()
-            {
-                var value = m_heap[0];
-                var x = m_heap[Count - 1];
-                m_heap.RemoveAt(Count - 1);
-                if (Count == 0) return value;
-                var pos = 0;
-                while (pos * 2 + 1 < Count)
-                {
-                    var a = 2 * pos + 1;
-                    var b = 2 * pos + 2;
-                    if (b < Count && Comp(m_heap[b], m_heap[a]) < 0) a = b;
-                    if (Comp(m_heap[a], x) >= 0) break;
-                    m_heap[pos] = m_heap[a];
-                    pos = a;
-                }
-                m_heap[pos] = x;
-                return value;
-            }
-            public T Peek() => m_heap[0];
-            public IEnumerator<T> GetEnumerator() { var x = (PriorityQueue<T>)Clone(); while (x.Count > 0) yield return x.Dequeue(); }
-            void CopyTo(Array array, int index) { foreach (var x in this) array.SetValue(x, index++); }
-            public object Clone() { var x = new PriorityQueue<T>(Comp, Count); x.m_heap.AddRange(m_heap); return x; }
-            public void Clear() => m_heap = new List<T>();
-            public void TrimExcess() => m_heap.TrimExcess();
-            public bool Contains(T item) { return m_heap.Contains(item); } //O(N)
-            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-            void ICollection.CopyTo(Array array, int index) => CopyTo(array, index);
-            bool ICollection.IsSynchronized => false;
-            object ICollection.SyncRoot => this;
-        }
-
-        /// <summary>
-        /// 二次元累積和
-        /// 二次元区間の区間和を求めます。
-        /// </summary>
-        class CumulativeSum2D
-        {
-            long[,] D;
-            int H, W;
-            /// <summary>O(HW)</summary>
-            public CumulativeSum2D(long[,] A)
-            {
-                H = A.GetLength(0);
-                W = A.GetLength(1);
-                D = new long[H + 1, W + 1];
-                Copy(A);
-                Culc();
-            }
-            void Culc()
-            {
-
-                for (int i = 0; i < H; i++)
-                {
-                    for (int j = 0; j < W + 1; j++)
-                    {
-                        D[i + 1, j] += D[i, j];
-                    }
-                }
-                for (int i = 0; i < H + 1; i++)
-                {
-                    for (int j = 0; j < W; j++)
-                    {
-                        D[i, j + 1] += D[i, j];
-                    }
-                }
-            }
-            void Copy(long[,] A)
-            {
-                for (int i = 0; i < H; i++)
-                {
-                    for (int j = 0; j < W; j++)
-                    {
-                        D[i + 1, j + 1] = A[i, j];
-                    }
-                }
-            }
-            /// <summary>
-            /// y : [0,H]
-            /// x : [0,W]
-            /// を指定して指定した範囲の区間和を求める。
-            /// </summary>
-            public long GetSum(int y1, int x1, int y2, int x2)
-            {
-                if (y2 < y1) (y1, y2) = (y2, y1);
-                if (x2 < x1) (x2, x1) = (x1, x2);
-                var sum = D[y2, x2] + D[y1, x1] - D[y2, x1] - D[y1, x2];
-                return sum;
-            }
-            public long this[int i, int j] => D[i, j];
-        }
         /// <summary>
         /// セグメントツリー 単更新・範囲検索 ジェネリクス
         /// </summary>
@@ -1091,14 +817,150 @@ namespace LIB340
         }
 
 
+        //TODO 区間加算の実装 このままではセグ木で物足りてしまう
+        /// <summary>
+        /// BIT
+        /// 単更新 & 区間の和の取得 早めのLog(N)
+        /// </summary>
+        class BIT
+        {
+            int N;
+            long[] data;
+            public BIT(int size)
+            {
+                data = new long[size + 1];
+                N = size;
+            }
+            public long Sum(int i)//[0,i)
+            {
+                long s = 0;
+                while (i > 0)
+                {
+                    s += data[i];
+                    i -= (i & -i);
+                }
+                return s;
+            }
+            public void Add(int i, long x)
+            {
+                i++;
+                while (i <= N)
+                {
+                    data[i] += x;
+                    i += (i & (-i));
+                }
+            }
+            public IEnumerator GetEnumerator()
+            {
+                for (int i = 0; i < N; i++)
+                {
+                    yield return this[i];
+                }
+            }
+            public long this[int i]
+            {
+                set => Add(i, value - this[i]);
+                get => Sum(i + 1) - Sum(i);
+            }
+        }
+
+        /// <summary>
+        /// 単更新 & 二次元区間和の取得 Log(N)
+        /// </summary>
+        class BIT2D
+        {
+            public int X, Y;
+            int[,] bit;
+            public BIT2D(int X, int Y)
+            {
+                this.X = X;
+                this.Y = Y;
+                bit = new int[X + 1, Y + 1];
+            }
+            public BIT2D(int[,] array) : this(array.GetLength(0), array.GetLength(1))
+            {
+                for (int i = 0; i < X; i++)
+                    for (int j = 0; j < Y; j++)
+                        Add(i, j, array[i, j]);
+            }
+            public void Add(int x, int y, int value)
+            {
+                for (int i = x + 1; i <= X; i += i & (-i))
+                    for (int j = y + 1; j <= Y; j += j & (-j))
+                        bit[i, j] += value;
+            }
+            public int Sum(int x0, int y0, int x1, int y1)
+            {
+                return Sum(x0, y0) + Sum(x1, y1) - Sum(x0, y1) - Sum(x1, y0);
+            }
+            int Sum(int x, int y)
+            {
+                var sum = 0;
+                for (var i = x; 0 < i; i -= i & (-i))
+                    for (var j = y; 0 < j; j -= j & (-j))
+                        sum += bit[i, j];
+                return sum;
+            }
+        }
+
+
+        // Zアルゴリズム 先頭文字列と何文字一致しているか
+        class ZAlgorithm
+        {
+            static string S;
+            int[] Same;
+            public ZAlgorithm(string s)
+            {
+                S = s;
+                Same = Search();
+            }
+            static int[] Search()
+            {
+                int N = S.Length, c = 0;
+                var Z = new int[N];
+                for (int i = 1; i < N; i++)
+                {
+                    int l = i - c;
+                    if (i + Z[l] < c + Z[c])
+                    {
+                        Z[i] = Z[l];
+                    }
+                    else
+                    {
+                        int leng = Math.Max(0, c + Z[c] - i);
+                        while (leng + i < N && S[i + leng] == S[leng])
+                        {
+                            leng++;
+                        }
+                        Z[i] = leng;
+                        c++;
+                    }
+                }
+                Z[0] = N;
+                return Z;
+            }
+            public int this[int i] => Same[i];
+        }
     }
 
 
 
 
-    //これ、どう名付ければ...
-    namespace SOMETHINGS
+    namespace minerAlgolithms
     {
+        /// <summary>
+        /// Dictionaryの代わり
+        /// 無いキーを参照するとdefaultの値を返す。
+        /// </summary>
+        class DefaultDict<TKey, TValue> : Dictionary<TKey, TValue> //Dictionary
+        {
+            new public TValue this[TKey key]
+            {
+                set => base[key] = value;
+                get => TryGetValue(key, out TValue value) ? value : default;
+            }
+        }
+
         /// <summary>
         /// 入力に番号を割り振ります
         /// </summary>
@@ -1121,37 +983,182 @@ namespace LIB340
             public int Count => itemToIndex.Count;
         }
 
+
+
+
         /// <summary>
-        /// Dictionaryの代わり
-        /// 無いキーを参照するとdefaultの値を返す。
+        /// 累積和
+        /// [a,b)の区間和の取得 Log(N)
         /// </summary>
-        class DefaultDict<TKey, TValue> : Dictionary<TKey, TValue> //Dictionary
+        public class CumulativeSum
         {
-            new public TValue this[TKey key]
+            long[] D, A;
+            bool IsCalcd = false;
+            Func<long, long, long> func;
+            public CumulativeSum(int[] A) : this(A, (i, j) => i + j) { }
+            public CumulativeSum(int size, Func<long, long, long> func) : this(new int[size], func) { }
+            public CumulativeSum(int size) : this(new int[size]) { }
+            public CumulativeSum(int[] A, Func<long, long, long> func)
             {
-                set => base[key] = value;
-                get => TryGetValue(key, out TValue value) ? value : default;
+                D = new long[A.Length + 1];
+                Array.Copy(A, this.A = new long[A.Length], A.Length);
+                this.func = func;
+            }
+            private void Calc()
+            {
+                if (IsCalcd) return;
+                for (int i = 0; i < A.Length; i++) D[i + 1] = func(D[i], A[i]);
+                IsCalcd = true;
+            }
+            public long this[int i] { get { Calc(); return D[i + 1] - D[i]; } set { A[i] = (int)value; IsCalcd = false; } }
+            public long this[int from, int to] { get { Calc(); return D[to] - D[from]; } }
+            public int Length => D.Length - 1;
+        }
+
+
+
+
+        /// <summary>
+        /// 二次元累積和
+        /// 二次元区間の区間和を求めます。
+        /// </summary>
+        class CumulativeSum2D
+        {
+            long[,] D;
+            int H, W;
+            /// <summary>O(HW)</summary>
+            public CumulativeSum2D(long[,] A)
+            {
+                H = A.GetLength(0);
+                W = A.GetLength(1);
+                D = new long[H + 1, W + 1];
+                Copy(A);
+                Culc();
+            }
+            void Culc()
+            {
+
+                for (int i = 0; i < H; i++)
+                {
+                    for (int j = 0; j < W + 1; j++)
+                    {
+                        D[i + 1, j] += D[i, j];
+                    }
+                }
+                for (int i = 0; i < H + 1; i++)
+                {
+                    for (int j = 0; j < W; j++)
+                    {
+                        D[i, j + 1] += D[i, j];
+                    }
+                }
+            }
+            void Copy(long[,] A)
+            {
+                for (int i = 0; i < H; i++)
+                {
+                    for (int j = 0; j < W; j++)
+                    {
+                        D[i + 1, j + 1] = A[i, j];
+                    }
+                }
+            }
+            /// <summary>
+            /// y : [0,H]
+            /// x : [0,W]
+            /// を指定して指定した範囲の区間和を求める。
+            /// </summary>
+            public long GetSum(int y1, int x1, int y2, int x2)
+            {
+                if (y2 < y1) (y1, y2) = (y2, y1);
+                if (x2 < x1) (x2, x1) = (x1, x2);
+                var sum = D[y2, x2] + D[y1, x1] - D[y2, x1] - D[y1, x2];
+                return sum;
+            }
+            public long this[int i, int j] => D[i, j];
+        }
+
+
+
+
+        static class LCS
+        {
+            public static int Search(int[] aList, int[] blist)
+            {
+                int n = aList.Length;
+                int m = blist.Length;
+                var dp = new int[n + 1][];
+                for (int i = 0; i <= n; i++)
+                {
+                    dp[i] = Enumerable.Repeat(int.MaxValue, m + 1).ToArray();
+                }
+                dp[0][0] = 0;
+                for (int i = 0; i < n + 1; i++)
+                {
+                    for (int j = 0; j < m + 1; j++)
+                    {
+                        if (i > 0)
+                        {
+                            dp[i][j] = Math.Min(dp[i][j], dp[i - 1][j] + 1);
+                        }
+                        if (j > 0)
+                        {
+                            dp[i][j] = Math.Min(dp[i][j], dp[i][j - 1] + 1);
+                        }
+                        if (i > 0 && j > 0)
+                        {
+                            dp[i][j] = Math.Min(dp[i][j], dp[i - 1][j - 1] + (aList[i - 1] == blist[j - 1] ? 0 : 1));
+                        }
+                    }
+                }
+                return dp[n][m];
             }
         }
 
+
+
+
         /// <summary>
-        /// 二分探索
-        /// (基本はスニペットのものを使おう)
+        /// 座標圧縮
         /// </summary>
-        static class BinarySearch
+        static class CoordinateCompression
         {
-            public static (long lb, long ub) Search(long lb, long ub, long item, Func<long, long, bool> comp) //compは midとアイテムを比較する
+            public static int[] Compress(int[] A)
             {
-                while (ub - lb > 1)
+                var nA = A.OrderBy(_ => _).Distinct().ToArray();
+                var N = A.Length;
+                var nN = nA.Length;
+                var ans = new List<int>(N);
+
+                foreach (var a in A)
                 {
-                    var mid = (lb + ub) >> 1;
-                    (lb, ub) = comp(mid, item) ? (mid, ub) : (lb, mid);
+                    var (lb, ub) = (-1, nN);
+                    while (ub - lb > 1)
+                    {
+                        var mid = (lb + ub) / 2;
+                        (lb, ub) = nA[mid] <= a ? (mid, ub) : (lb, mid);
+                    }
+                    ans.Add(lb);
                 }
-                return (lb, ub);
+                return ans.ToArray();
             }
-            public static (long lb, long ub) Search(long lb, long ub, long item) => Search(lb, ub, item, (mid, item) => mid < item); //下の境界を求める
-            public static (int lb, int ub) Search(int lb, int ub, long item, Func<long, long, bool> comp) => Search(lb, ub, item, comp);
         }
+
+    }
+    
+
+   
+
+
+
+    //これ、どう名付ければ...
+    namespace SOMETHINGS
+    {
+        
+
+        
+
+        
     }
 
 
@@ -1222,124 +1229,9 @@ namespace LIB340
 
 
 
-    // Zアルゴリズム 先頭文字列と何文字一致しているか
-    class ZAlgorithm
-    {
-        static string S;
-        int[] Same;
-        public ZAlgorithm(string s)
-        {
-            S = s;
-            Same = Search();
-        }
-        static int[] Search()
-        {
-            int N = S.Length, c = 0;
-            var Z = new int[N];
-            for (int i = 1; i < N; i++)
-            {
-                int l = i - c;
-                if (i + Z[l] < c + Z[c])
-                {
-                    Z[i] = Z[l];
-                }
-                else
-                {
-                    int leng = Math.Max(0, c + Z[c] - i);
-                    while (leng + i < N && S[i + leng] == S[leng])
-                    {
-                        leng++;
-                    }
-                    Z[i] = leng;
-                    c++;
-                }
-            }
-            Z[0] = N;
-            return Z;
-        }
-        public int this[int i] => Same[i];
-    }
+    
 
-    // BIT 区間の和 速めのLog(N)
-    //TODO 区間加算の実装 このままではセグ木で物足りてしまう
-    class BIT
-    {
-        int N;
-        long[] data;
-        public BIT(int size)
-        {
-            data = new long[size + 1];
-            N = size;
-        }
-        public long Sum(int i)//[0,i)
-        {
-            long s = 0;
-            while (i > 0)
-            {
-                s += data[i];
-                i -= (i & -i);
-            }
-            return s;
-        }
-        public void Add(int i, long x)
-        {
-            i++;
-            while (i <= N)
-            {
-                data[i] += x;
-                i += (i & (-i));
-            }
-        }
-        public IEnumerator GetEnumerator()
-        {
-            for (int i = 0; i < N; i++)
-            {
-                yield return this[i];
-            }
-        }
-        public long this[int i]
-        {
-            set => Add(i, value - this[i]);
-            get => Sum(i + 1) - Sum(i);
-        }
-    }
-
-    // 二次元BIT 二次元の区間の和
-    class BIT2D
-    {
-        public int X, Y;
-        int[,] bit;
-        public BIT2D(int X, int Y)
-        {
-            this.X = X;
-            this.Y = Y;
-            bit = new int[X + 1, Y + 1];
-        }
-        public BIT2D(int[,] array) : this(array.GetLength(0), array.GetLength(1))
-        {
-            for (int i = 0; i < X; i++)
-                for (int j = 0; j < Y; j++)
-                    Add(i, j, array[i, j]);
-        }
-        public void Add(int x, int y, int value)
-        {
-            for (int i = x + 1; i <= X; i += i & (-i))
-                for (int j = y + 1; j <= Y; j += j & (-j))
-                    bit[i, j] += value;
-        }
-        public int Sum(int x0, int y0, int x1, int y1)
-        {
-            return Sum(x0, y0) + Sum(x1, y1) - Sum(x0, y1) - Sum(x1, y0);
-        }
-        int Sum(int x, int y)
-        {
-            var sum = 0;
-            for (var i = x; 0 < i; i -= i & (-i))
-                for (var j = y; 0 < j; j -= j & (-j))
-                    sum += bit[i, j];
-            return sum;
-        }
-    }
+    
 
 
 
@@ -1546,31 +1438,7 @@ namespace LIB340
         }
     }
 
-    // 累積和 [a,b)の計算 (get時に計算する。)
-    public class CumulativeSum
-    {
-        long[] D, A;
-        bool IsCalcd = false;
-        Func<long, long, long> func;
-        public CumulativeSum(int[] A) : this(A, (i, j) => i + j) { }
-        public CumulativeSum(int size, Func<long, long, long> func) : this(new int[size], func) { }
-        public CumulativeSum(int size) : this(new int[size]) { }
-        public CumulativeSum(int[] A, Func<long, long, long> func)
-        {
-            D = new long[A.Length + 1];
-            Array.Copy(A, this.A = new long[A.Length], A.Length);
-            this.func = func;
-        }
-        private void Calc()
-        {
-            if (IsCalcd) return;
-            for (int i = 0; i < A.Length; i++) D[i + 1] = func(D[i], A[i]);
-            IsCalcd = true;
-        }
-        public long this[int i] { get { Calc(); return D[i + 1] - D[i]; } set { A[i] = (int)value; IsCalcd = false; } }
-        public long this[int from, int to] { get { Calc(); return D[to] - D[from]; } }
-        public int Length => D.Length - 1;
-    }
+   
 
 
     // ビットDPのサンプル (徘徊セールスマン問題)
@@ -1593,39 +1461,7 @@ namespace LIB340
     //    return dp[S, v] = res;
     //}
 
-    static class LCS
-    {
-        public static int Search(int[] aList, int[] blist)
-        {
-            int n = aList.Length;
-            int m = blist.Length;
-            var dp = new int[n + 1][];
-            for (int i = 0; i <= n; i++)
-            {
-                dp[i] = Enumerable.Repeat(int.MaxValue, m + 1).ToArray();
-            }
-            dp[0][0] = 0;
-            for (int i = 0; i < n + 1; i++)
-            {
-                for (int j = 0; j < m + 1; j++)
-                {
-                    if (i > 0)
-                    {
-                        dp[i][j] = Math.Min(dp[i][j], dp[i - 1][j] + 1);
-                    }
-                    if (j > 0)
-                    {
-                        dp[i][j] = Math.Min(dp[i][j], dp[i][j - 1] + 1);
-                    }
-                    if (i > 0 && j > 0)
-                    {
-                        dp[i][j] = Math.Min(dp[i][j], dp[i - 1][j - 1] + (aList[i - 1] == blist[j - 1] ? 0 : 1));
-                    }
-                }
-            }
-            return dp[n][m];
-        }
-    }
+    
 
     //Modしない計算 BigInteger型で返す
     class BigMath
@@ -1663,32 +1499,218 @@ namespace LIB340
             return Fac(n) / Fac(n - r);
         }
     }
-    /// <summary>
-    /// 座標圧縮
-    /// </summary>
-    static class CoordinateCompression
-    {
-        public static int[] Compress(int[] A)
-        {
-            var nA = A.OrderBy(_ => _).Distinct().ToArray();
-            var N = A.Length;
-            var nN = nA.Length;
-            var ans = new List<int>(N);
+    
 
-            foreach (var a in A)
+
+
+
+
+    namespace TEMPLATES
+    {
+        public static class StaticScanner
+        {
+            static System.IO.Stream reader;
+            static byte[] buffer = new byte[1024];
+            static int cursor = 0, length = 0;
+            static StaticScanner()
             {
-                var (lb, ub) = (-1, nN);
-                while (ub - lb > 1)
-                {
-                    var mid = (lb + ub) / 2;
-                    (lb, ub) = nA[mid] <= a ? (mid, ub) : (lb, mid);
-                }
-                ans.Add(lb);
+                reader = Console.OpenStandardInput();
             }
-            return ans.ToArray();
+            public static string RStr()
+            {
+                var line = new System.Text.StringBuilder();
+                char c;
+                while (true)
+                {
+                    if (cursor == length)
+                    {
+                        length = reader.Read(buffer);
+                        cursor = 0;
+                        if (length == 0) break;
+                    }
+                    c = (char)buffer[cursor++];
+                    if (c == '\n') break;
+                    line.Append(c);
+                }
+                return line.ToString();
+            }
+            public static int RInt() => RTuple<int>();
+            public static long RLong() => RTuple<long>();
+            public static double RDouble() => RTuple<double>();
+            public static string[] RStrs() => RStr().Split();
+            public static int[] RInts() => Array.ConvertAll(RStrs(), int.Parse);
+            public static long[] RLongs() => Array.ConvertAll(RStrs(), long.Parse);
+            public static double[] RDoubles() => Array.ConvertAll(RStrs(), double.Parse);
+            public static int[] RInts(Func<int, int> func) => RInts().Select(func).ToArray();
+            public static long[] RLongs(Func<long, long> func) => RLongs().Select(func).ToArray();
+            public static double[] RDoubles(Func<double, double> func) => RDoubles().Select(func).ToArray();
+            private static T ChType<T>(string r) => (T)Convert.ChangeType(r, typeof(T));
+            public static T1 RTuple<T1>()
+            {
+                var r = RStr();
+                return ChType<T1>(r);
+            }
+            public static (T1, T2) RTuple<T1, T2>()
+            {
+                var r = RStrs();
+                return (ChType<T1>(r[0]), ChType<T2>(r[1]));
+            }
+            public static (T1, T2, T3) RTuple<T1, T2, T3>()
+            {
+                var r = RStrs();
+                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]));
+            }
+            public static (T1, T2, T3, T4) RTuple<T1, T2, T3, T4>()
+            {
+                var r = RStrs();
+                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]));
+            }
+            public static (T1, T2, T3, T4, T5) RTuple<T1, T2, T3, T4, T5>()
+            {
+                var r = RStrs();
+                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]), ChType<T5>(r[4]));
+            }
+            //N行入力 => (T1,T2..)[N]
+            public static (T1, T2)[] RTuples<T1, T2>(int N) => new (T1, T2)[N].Select(_ => _ = RTuple<T1, T2>()).ToArray();
+            public static (T1, T2, T3)[] RTuples<T1, T2, T3>(int N) => new (T1, T2, T3)[N].Select(_ => _ = RTuple<T1, T2, T3>()).ToArray();
+            public static (T1, T2, T3, T4)[] RTuples<T1, T2, T3, T4>(int N) => new (T1, T2, T3, T4)[N].Select(_ => _ = RTuple<T1, T2, T3, T4>()).ToArray();
+        }
+
+
+        public static class Template
+        {
+            public static void CopyTo<T>(this T[] source, T[] destination) => Array.Copy(source, destination, source.Length);
+            public static void CopyTo(this Array ary, Array dest) => Array.Copy(ary, dest, ary.Length);
+            public static void Fill<T>(this T[] ary, T init) => ary.AsSpan().Fill(init);
+            public static void Fill<T>(this T[,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0], ary.Length).Fill(init);
+            public static void Fill<T>(this T[,,] ary, T init) => MemoryMarshal.CreateSpan(ref ary[0, 0, 0], ary.Length).Fill(init);
+            public static void Sort<T>(this T[] ary) where T : IComparable<T>
+            => Array.Sort(ary);
+            public static void Sort<T>(this T[] ary, Comparison<T> comp) where T : IComparable<T> => Array.Sort(ary, comp);
+            public static void Sort<T>(this T[] sourse, params T[][] dest) where T : IComparable<T>
+            {
+                var E = Enumerable.Range(0, sourse.Length).ToArray();
+                Array.Sort(sourse, E);
+                foreach (Span<T> item in dest)
+                {
+                    Span<T> cd = new T[item.Length];
+                    item.CopyTo(cd);
+                    for (int j = 0; j < sourse.Length; j++) item[j] = cd[E[j]];
+                }
+            }
+            public static void Reverse<T>(this T[] ary) where T : IComparable<T> => Array.Reverse(ary);
+            public static string JoinedString<T>(this IEnumerable<T> ary, string sep = " ") =>
+            string.Join(sep, ary);
+            public static void WriteLine<T>(T str) { Console.WriteLine(str.ToString()); }
+            public static bool ChMax<T>(ref this T value, T other) where T : struct, IComparable<T>
+            {
+                if (value.CompareTo(other) < 0)
+                {
+                    value = other;
+                    return true;
+                }
+                return false;
+            }
+            public static bool ChMin<T>(ref this T value, T other) where T : struct, IComparable<T>
+            {
+                if (value.CompareTo(other) > 0)
+                {
+                    value = other;
+                    return true;
+                }
+                return false;
+            }
+            public static void Swap<T>(ref this (T, T) item) =>
+        item = (item.Item2, item.Item1);
+            //[min,max]の範囲内かどうか
+            public static bool IsBetween<T>(ref this T value, T min, T max) where T : struct, IComparable<T>
+            {
+                return 0 <= value.CompareTo(min) && value.CompareTo(max) < 0;
+            }
+            public static string YESNO(bool b) => b ? "YES" : "NO";
+            public static string YesNo(bool b) => b ? "Yes" : "No";
+            public static string yesno(bool b) => b ? "yes" : "no";
+            public static readonly int Inf = int.MaxValue / 2;
+            public static readonly long InfL = long.MaxValue / 4;
+            public static readonly (int, int)[] DD4 = new (int y, int x)[4] { (1, 0), (0, 1), (-1, 0), (0, -1) };
+            public static readonly (int, int)[] DD8 = new (int y, int x)[8] { (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1) };
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        namespace Debug
+        {
+            /// <summary>
+            /// 入力ファイルから読み込み、出力ファイルに出力する。
+            /// 実行ディレクトリにinput.txtとoutput.txtを置くこと
+            /// インスタンス名にConsoleとつけることで入力の置き換えが可能
+            /// </summary>
+            public class FileIO
+            {
+                string INPUTPATH, OUTPUTPATH;
+                string[] alllines;
+                public FileIO(string inpath = @"input.txt", string outpath = @"output.txt")
+                {
+                    INPUTPATH = inpath;
+                    OUTPUTPATH = outpath;
+                    alllines = File.ReadAllLines(inpath);
+                    Clear();
+                }
+                int currentline = 0;
+                public string ReadLine()
+                {
+                    if (alllines.Length <= currentline) throw new Exception("ファイルの終わりに到達しました。");
+                    return alllines[currentline++];
+                }
+                public string[] ReadAllLines()
+                {
+                    string[] copy = new string[alllines.Length];
+                    Array.Copy(alllines, copy, alllines.Length);
+                    return alllines;
+                }
+                public void WriteLine(string str)
+                {
+                    File.AppendAllText(OUTPUTPATH, str + Environment.NewLine);
+                }
+                public void Clear()
+                {
+                    File.WriteAllText(OUTPUTPATH, "");
+                }
+                public string GetOutputPath => Directory.GetCurrentDirectory() + "/" + OUTPUTPATH;
+                public string GetInput => Directory.GetCurrentDirectory() + "/" + INPUTPATH;
+            }
+        }
+
+        static class RandomInput
+        {
+            //"using staticを置き換えることで入力をランダムにする" ことが目標
+            public static Random Rand = new Random(DateTime.Now.Millisecond);
+            public static int RandomInt(int min, int max) => Rand.Next(min, max);
+            public static string RandomString(int min = 4, int max = 8) => string.Join("", new char[RandomInt(min, max)].Select(_ => (char)('a' + RandomInt(0, 26))).ToArray());
+            public static int[] RandomArray(int leng, int minvalue, int maxvalue) => new int[leng].Select(_ => Rand.Next(minvalue, maxvalue)).ToArray();
+            /// <summary>ランダムなbool[H,W]を作る</summary>
+            static bool[,] randommap(int H, int W, float freq)
+            {
+                Random rand = new Random();
+                var res = new bool[H, W];
+                for (int i = 0; i < H; i++)
+                {
+                    for (int j = 0; j < W; j++)
+                    {
+                        res[i, j] = rand.NextDouble() <= freq;
+                    }
+                }
+                return res;
+            }
+            public static int RInt() => RandomInt(1, 10);
+            public static int[] RInts() => RandomArray(10, 0, 10);
+            //var sw = new System.IO.StreamWriter(Console.OpenStandardOutput()) { AutoFlush = false };
+            //Console.SetOut(sw);
+            //Console.Out.Flush();
         }
     }
-
 }
 
 
@@ -1800,7 +1822,7 @@ namespace TEST
             {
                 arrowexpand = size == 4;
                 maxsize = size;
-                G = new Node<TEdge>[size].Select(_ => _ = new Node< TEdge>()).ToArray();
+                G = new Node<TEdge>[size].Select(_ => _ = new Node<TEdge>()).ToArray();
             }
             public void Add(Edge<TEdge> edge)
             {
@@ -1827,12 +1849,12 @@ namespace TEST
             private void Expand()
             {
                 if (!arrowexpand) throw new Exception("グラフが指定したサイズを超える入力を受け取りました。");
-                var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node< TEdge>()).ToArray();
+                var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node<TEdge>()).ToArray();
                 Array.Copy(G, temp, G.Length);
                 G = temp;
             }
             public int Length => G.Length;
-            public Node< TEdge> this[int i] => G[i];
+            public Node<TEdge> this[int i] => G[i];
             public IEnumerator<Node<TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
         }
         class Graph : Graph<int> { public Graph(int size = 4) : base(size) { } }
@@ -1932,7 +1954,7 @@ namespace TEST
 
     namespace Scanner
     {
-        
+
 
         /// <summary>
         /// 事前には入力が決まらない場合はこちらを使います。
@@ -1986,9 +2008,11 @@ namespace TEST
     }
 
 }
-#if test
+
 namespace SegTree
 {
+    //セグ木にデータを持たせたかったがジェネリクスのせいでうまくいかなかった
+    //自分自身の型でジェネリクスして、内部で型を持たせるようにした。
     /// <summary>
     /// モノイドとは
     /// (a•b)•c = a•(b•c) の性質をもつ演算子と単位元の組
@@ -1999,24 +2023,25 @@ namespace SegTree
         public T unit { get; }
         public T Merge(T other);
     }
+
     struct RangeMax : IMonoid<RangeMax>
     {
-        public long Value;
-        public RangeMax(long value) => Value = value;
-        public static implicit operator long(RangeMax value)=>value.Value;
-
         public RangeMax unit => new(long.MinValue);
         public RangeMax Merge(RangeMax other) => new(Math.Max(this, other));
+
+        public long Value;
+        public RangeMax(long value) => Value = value;
+        public static implicit operator long(RangeMax value) => value.Value;
     }
 
     struct RangeMin : IMonoid<RangeMin>
     {
-        public long Value;
-        public RangeMin(long value) => Value = value;
-        public static implicit operator long(RangeMin value)=>value.Value;
-
         public RangeMin unit => new(long.MaxValue);
         public RangeMin Merge(RangeMin other) => new(Math.Min(this, other));
+
+        public long Value;
+        public RangeMin(long value) => Value = value;
+        public static implicit operator long(RangeMin value) => value.Value;
     }
     /// <summary>
     /// セグメントツリー
@@ -2061,10 +2086,40 @@ namespace SegTree
     }
 }
 
-class Template2
+
+
+
+
+
+//使わない
+namespace Garbage
+{
+    /// <summary>
+    /// 二分探索
+    /// (基本はスニペットのものを使おう)
+    /// </summary>
+    static class BinarySearch
+    {
+        public static (long lb, long ub) Search(long lb, long ub, long item, Func<long, long, bool> comp) //compは midとアイテムを比較する
         {
-            //遅すぎ (Math.MaxMinの10倍遅い)
-            public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
-            public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
+            while (ub - lb > 1)
+            {
+                var mid = (lb + ub) >> 1;
+                (lb, ub) = comp(mid, item) ? (mid, ub) : (lb, mid);
+            }
+            return (lb, ub);
         }
-#endif
+        public static (long lb, long ub) Search(long lb, long ub, long item) => Search(lb, ub, item, (mid, item) => mid < item); //下の境界を求める
+        public static (int lb, int ub) Search(int lb, int ub, long item, Func<long, long, bool> comp) => Search(lb, ub, item, comp);
+    }
+
+
+
+    class Template2
+    {
+        //遅すぎ (Math.MaxMinの10倍遅い)
+        public static T Max<T>(params T[] nums) where T : IComparable => nums.Aggregate((max, next) => max.CompareTo(next) < 0 ? next : max);
+        public static T Min<T>(params T[] nums) where T : IComparable => nums.Aggregate((min, next) => min.CompareTo(next) > 0 ? next : min);
+    }
+}
+
