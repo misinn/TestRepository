@@ -8,13 +8,16 @@ using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 using BigInteger = System.Numerics.BigInteger;
 using StringBuilder = System.Text.StringBuilder;
 using LIB340.TEMPLATES;
-using LIB340.ALGORITHMS;
-using LIB340.SOMETHINGS;
 /// <summary>
 /// C# 競技プログラミング用ライブラリ
 /// [使い方]
 /// エディタの検索機能でクラスを探す。=> 折り畳んでからクラスをコピペする
 ///
+/// [コーディング規則]
+/// クラス•メソッドの説明はsummaryで囲う。
+/// 
+///
+/// 
 /// [目次]  ()はスニペット済 
 ///
 /// 数学関連 : MyMath
@@ -49,9 +52,10 @@ namespace LIB340
         {
             public static class MyMath
             {
-                //最大公約数
+                /// <summary>最大公約数  </summary>
                 public static long GCD(long a, long b) => a == 0 ? b : GCD(b % a, a);
-                //ax + by = gcd(a,b)
+
+                /// <summary>拡張GCD  ax + by = gcd(a,b) </summary>
                 public static (long x, long y) extGCD(long a, long b)
                 {
                     if (a < b)
@@ -66,9 +70,11 @@ namespace LIB340
                         return (t.y, t.x - a / b * t.y);
                     }
                 }
-                //最小公倍数
+
+                /// <summary>最小公倍数 </summary>
                 public static long LCM(long a, long b) => a / GCD(a, b) * b;
 
+                /// <summary>冪剰余 (a^n % mod).  a <= 10^9 </summary>
                 public static long ModPow(long a, long n, long mod)
                 {
                     long res = 1;
@@ -81,7 +87,7 @@ namespace LIB340
                     return res;
                 }
 
-                //進数変換
+                /// <summary>進数変換 </summary>
                 public static int[] ConvertBase(long sourse, int b)
                 {
                     long num = 1;
@@ -101,7 +107,10 @@ namespace LIB340
                     return ans.ToArray();
                 }
 
-                //順列列挙
+                /// <summary>
+                /// 全順列列挙。
+                /// [1,2,3] -> [1,2,3],[2,1,3],[3,1,2],[1,3,2],[2,3,1],[3,2,1]
+                /// </summary>
                 public static IEnumerable<IEnumerable<T>> Permutation<T>(IEnumerable<T> source)
                 {
                     var items = source.ToArray();
@@ -202,7 +211,7 @@ namespace LIB340
 
             /// <summary>
             /// 値がModされる 行列を扱います
-            /// TODO 最低限の機能しかありません
+            /// TODO 機能追加
             /// </summary>
             class ModMat
             {
@@ -298,14 +307,21 @@ namespace LIB340
         }
 
 
+       /// <summary>
+       /// グラフを使ったライブラリ群。
+       /// </summary>
         namespace GraphExtension
         {
                 /// <summary>
+                /// グラフ
+                /// 追加する辺次第で重み有り無し　変更できます。
+                /// 
                 /// 隣接リスト(グラフ) サイズの自動拡張機能つき
                 /// new時にサイズ指定するとサイズは固定
                 /// 辺重複可
                 /// </summary>
                 /// <typeparam name="TEdge"></typeparam>
+                
                 class Graph<TEdge>
                 {
                     int maxsize = 0;
@@ -315,11 +331,14 @@ namespace LIB340
                         maxsize = size;
                         G = new Node<TEdge>[size].Select(_ => _ = new Node<TEdge>()).ToArray();
                     }
+                    /// <summary>一方向に辺を追加します。</summary>
+                    /// <param name="edge"></param>
                     public void Add(Edge<TEdge> edge)
                     {
                         while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
                         G[edge.From].edges.Add(edge);
                     }
+                    /// <summary>双方向に辺を追加します。</summary>
                     public void AddBoth(Edge<TEdge> edge)
                     {
                         Add(edge);
@@ -363,16 +382,17 @@ namespace LIB340
 
 
             /// <summary>
-            /// ダイクストラ 有向グラフの拡張メソッド 始点から各頂点までの最小コストを求める
+            /// ダイクストラ  始点から各頂点までの最小コストを求めます。 (有向グラフの拡張メソッド)
             /// 必要なライブラリ : [優先キュー] [グラフ]
+            /// ※注意  負辺が含まれるとO(2^n)になるケースがあります。
             /// Search : O(ElogV)
             /// </summary>
             static class Dijkstraa
             {
-                public static long dijkstra<T>(this Graph<T> G, int from, int to) => dijkstra(G, from)[to];
-                public static long dijkstra<T>(this Graph<T> G, int from, int to, Comparison<(int to, long cost)> comp) => dijkstra(G, from, comp)[to];
-                public static long[] dijkstra<T>(this Graph<T> G, int from) => dijkstra(G, from, (x, y) => x.cost.CompareTo(y.cost));
-                public static long[] dijkstra<T>(this Graph<T> G, int from, Comparison<(int to, long cost)> comp)
+                public static long dijkstra(this Graph<long> G, int from, int to) => dijkstra(G, from)[to];
+                public static long dijkstra(this Graph<long> G, int from, int to, Comparison<(int to, long cost)> comp) => dijkstra(G, from, comp)[to];
+                public static long[] dijkstra(this Graph<long> G, int from) => dijkstra(G, from, (x, y) => x.cost.CompareTo(y.cost));
+                public static long[] dijkstra(this Graph<long> G, int from, Comparison<(int to, long cost)> comp)
                 {
                     var d = Enumerable.Repeat(long.MaxValue / 4, G.Length).ToArray();
                     var que = new PriorityQueue<(int to, long cost)>(comp);
@@ -384,7 +404,7 @@ namespace LIB340
                         if (d[v] < c) continue;
                         foreach (var edge in G[v])
                         {
-                            long ecost = ChLong(edge.Value);
+                            long ecost = (long)(edge.Value);
 
                             int nv = edge.To;
                             long nc = d[v] + ecost;
@@ -399,10 +419,119 @@ namespace LIB340
                 static long ChLong(object value) => (long)Convert.ChangeType(value, typeof(long));
             }
 
-
-
+            // (スニペット済み)
             /// <summary>
-            /// 優先キュー (スニペット済)
+            /// 両端キュー 配列の前後で追加•Pop操作ができます 。
+            /// PushFront & PushBack : O(1)
+            /// PopFront & PopBack : O(1)
+            /// PeekFront & PeekBack : O(1)
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            class Deque<T> : IEnumerable<T>
+            {
+                T[] buf;
+                int offset, count, cap;
+                public int Count { get { return count; } }
+                public Deque(IEnumerable<T> collection) : this()
+                {
+                    foreach (var item in collection) PushBack(item);
+                }
+                public Deque(int cap) { buf = new T[this.cap = cap]; }
+                public Deque() { buf = new T[cap = 16]; }
+                public T this[int index]
+                {
+                    get { return buf[GetIndex(index)]; }
+                    set { buf[GetIndex(index)] = value; }
+                }
+                private int GetIndex(int index)
+                {
+                    if (index >= cap) throw new IndexOutOfRangeException();
+                    var ret = index + offset;
+                    return ret >= cap ? ret - cap : ret;
+                }
+                public T PeekFront() => buf[offset];
+                public T PeekBack() => buf[GetIndex(Count - 1)];
+                public void PushFront(T item)
+                {
+                    if (count == cap) Extend();
+                    if (--offset < 0) offset += buf.Length;
+                    buf[offset] = item;
+                    ++count;
+                }
+                public T PopFront()
+                {
+                    if (count == 0) throw new InvalidOperationException("collection is empty");
+                    --count;
+                    var ret = buf[offset++];
+                    if (offset >= cap) offset -= cap;
+                    return ret;
+                }
+                public void PushBack(T item)
+                {
+                    if (count == cap) Extend();
+                    var id = count++ + offset;
+                    if (id >= cap) id -= cap;
+                    buf[id] = item;
+                }
+                public T PopBack()
+                {
+                    if (count == 0) throw new InvalidOperationException("collection is empty");
+                    return buf[GetIndex(--count)];
+                }
+                public void Insert(int index, T item)
+                {
+                    if (index > count) throw new IndexOutOfRangeException();
+                    this.PushFront(item);
+                    for (int i = 0; i < index; i++)
+                        this[i] = this[i + 1];
+                    this[index] = item;
+                }
+                public T RemoveAt(int index)
+                {
+                    if (index < 0 || index >= count) throw new IndexOutOfRangeException();
+                    var ret = this[index];
+                    for (int i = index; i > 0; i--)
+                        this[i] = this[i - 1];
+                    this.PopFront();
+                    return ret;
+                }
+                void Extend()
+                {
+                    T[] newBuffer = new T[cap << 1];
+                    if (offset > cap - count)
+                    {
+                        var len = buf.Length - offset;
+                        Array.Copy(buf, offset, newBuffer, 0, len);
+                        Array.Copy(buf, 0, newBuffer, len, count - len);
+                    }
+                    else Array.Copy(buf, offset, newBuffer, 0, count);
+                    buf = newBuffer;
+                    offset = 0;
+                    cap <<= 1;
+                }
+
+                public IEnumerator<T> GetEnumerator() => Items.ToList().GetEnumerator();
+
+                IEnumerator IEnumerable.GetEnumerator()
+                {
+                    throw new NotImplementedException();
+                }
+
+                public T[] Items//デバッグ時に中身を調べるためのプロパティ
+                {
+                    get
+                    {
+                        var a = new T[count];
+                        for (int i = 0; i < count; i++)
+                            a[i] = this[i];
+                        return a;
+                    }
+                }
+            }
+
+            // (スニペット済み)
+            /// <summary>
+            /// 優先キュー 優先度の高い要素から順に取り出します。
             /// Enqueue : O(logN)
             /// Dequeue : O(logN)
             /// Peek : O(1)
@@ -418,6 +547,7 @@ namespace LIB340
                 public PriorityQueue(int capacity = 16, IEnumerable<T> source = null) : this(null, capacity, source) { }
                 public PriorityQueue(Comparison<T> comp, IEnumerable<T> source) : this(comp, 16, source) { }
                 public PriorityQueue(Comparison<T> comp, int capacity = 16, IEnumerable<T> source = null) { this.Comp = comp == null ? (x, y) => Comparer<T>.Default.Compare(x, y) : comp; m_heap = new List<T>(capacity); if (source != null) foreach (var x in source) Enqueue(x); }
+                /// <summary>要素を追加します。</summary>
                 public void Enqueue(T x)
                 {
                     var pos = Count;
@@ -430,7 +560,10 @@ namespace LIB340
                         pos = p;
                     }
                     m_heap[pos] = x;
+                    var que = new Queue<int>();
+                    
                 }
+                /// <summary>先頭の要素を取り出します。(値はキューから削除。)</summary>
                 public T Dequeue()
                 {
                     var value = m_heap[0];
@@ -450,6 +583,7 @@ namespace LIB340
                     m_heap[pos] = x;
                     return value;
                 }
+                /// <summary>先頭の要素を取得します。 (値はキューに保持。)</summary>
                 public T Peek() => m_heap[0];
                 public IEnumerator<T> GetEnumerator() { var x = (PriorityQueue<T>)Clone(); while (x.Count > 0) yield return x.Dequeue(); }
                 void CopyTo(Array array, int index) { foreach (var x in this) array.SetValue(x, index++); }
@@ -466,12 +600,12 @@ namespace LIB340
 
 
             /// <summary>
-            /// 最小全域木　無向グラフの拡張メソッド
-            /// 全区間のコストの和も求める
-            /// UnionFindを先に実装すること
+            /// 最小全域木　(無向グラフの拡張メソッド)
+            /// 必要なライブラリ : [UnionFind] [グラフ]
             /// </summary>
             static class Kruskal
             {
+                /// <summary>グラフを最小全域木に変換します。</summary>
                 public static Graph<long> MinimumSpanningTree(this Graph<long> G, Comparison<Edge<long>> comp = null)
                 {
                     comp ??= (a, b) => a.Value.CompareTo(b.Value);
@@ -487,6 +621,7 @@ namespace LIB340
                     }
                     return res;
                 }
+                /// <summary>全区間の距離(コスト)の和を求めます。</summary>
                 public static long CostSum(this Graph<long> G)
                 {
                     var res = 0L;
@@ -499,10 +634,16 @@ namespace LIB340
             }
 
 
-            // トポロジカルソート 
+            /// <summary>
+            /// トポロジカルソート  DAGを順序付けし、起点の要素から並べた一次元配列に直します。
+            /// </summary>
             static class TopologicalSort
             {
-                //Degreesはその頂点にのびる辺の数 無理ならnullを返す
+                // TODO Degreesの実装
+                /// <summary>トポロジカルソートした結果を返します。不可能な場合nullを返します。</summary>
+                /// <param name="G">グラフ</param>
+                /// <param name="Degrees">Degreesはその頂点にのびる辺の数</param>
+                /// <returns></returns>
                 public static List<int> Topologicalsort(Graph<int> G, int[] Degrees)
                 {
                     var que = new Queue<int>();
@@ -532,8 +673,8 @@ namespace LIB340
 
 
         /// <summary>
-        /// 普通のUnionFind
-        /// Unite：O(a(n)) aはアッカーマン関数の逆関数 3くらい
+        /// 普通のUnionFind 。
+        /// Unite：O(α(n)) αはアッカーマン関数の逆関数 定数の3程度
         /// </summary>
         public class UnionFind
         {
@@ -544,6 +685,7 @@ namespace LIB340
                 this.n = n;
                 p = Enumerable.Repeat(-1, n).ToArray();
             }
+            /// <summary>グループを結合します。 O(α(n)) </summary>
             public bool Unite(int x, int y)
             {
                 (x, y) = (Root(x), Root(y));
@@ -555,12 +697,11 @@ namespace LIB340
                 }
                 return x != y;
             }
+            /// <summary>同じグループか判別します。 </summary>
             public bool IsSame(int x, int y) => Root(x) == Root(y);
             public int Root(int x) => p[x] < 0 ? x : p[x] = Root(p[x]); //親のノードを探す
             public int GetMem(int x) => -p[Root(x)];
-            /// <summary>
-            /// グループごとに分けたListを出力
-            /// </summary>
+            /// <summary>グループごとに分けたListを出力 </summary>
             public List<int>[] Groups
             {
                 get
@@ -577,44 +718,44 @@ namespace LIB340
         }
 
         /// <summary>
-        /// 重み付きUnionFind
+        /// 重み付きUnionFind。  親ノードに重みのMerge結果をまとめます。
         /// 初期化時に重みを入力する
-        /// 親にマージした値がのる
-        /// TODO 普通のunionfindを継承したらコンパクトになりそう
         /// </summary>
         /// <typeparam name="T">重みの型</typeparam>
         public class WeightedUnionFind<T>
         {
             int n;
-            int[] p;
-            T[] data;
+            int[] P;
+            T[] W;
             Func<T, T, T> Merge;
             public WeightedUnionFind(int size) : this(size, (a, b) => default, new T[size]) { }
             public WeightedUnionFind(int n, Func<T, T, T> merge, T[] init)
             {
                 this.n = n;
-                p = Enumerable.Repeat(-1, n).ToArray();
-                data = init;
+                P = Enumerable.Repeat(-1, n).ToArray();
+                W = init;
                 Merge = merge;
             }
+            /// <summary>グループを結合します。要素数の大きい方が親になります。 </summary>
             public bool Unite(int x, int y)
             {
                 x = Root(x);
                 y = Root(y);
                 if (x != y)
                 {
-                    if (p[y] < p[x]) (y, x) = (x, y);
-                    p[x] += p[y];
-                    p[y] = x;
-                    data[x] = Merge(data[x], data[y]);
+                    if (P[y] < P[x]) (y, x) = (x, y);
+                    P[x] += P[y];
+                    P[y] = x;
+                    W[x] = Merge(W[x], W[y]);
                 }
                 return x != y;
             }
             public bool IsSameGroup(int x, int y) => Root(x) == Root(y);
-            public int Root(int x) => p[x] < 0 ? x : p[x] = Root(p[x]);
-            public int GetMem(int x) => -p[Root(x)];
-            public T Weight(int x) => this[x];
-            public T this[int x] => data[Root(x)]; //親の重み
+            public int Root(int x) => P[x] < 0 ? x : P[x] = Root(P[x]);
+            public int GetMem(int x) => -P[Root(x)];
+            public T Weight(int x) => W[x];
+            /// <summary>要素の親の重みを取得します。 Set非推奨! </summary>
+            public T this[int x] { get => W[Root(x)]; set => W[Root(x)] = value; } 
             public List<int>[] Groups
             {
                 get
@@ -622,7 +763,7 @@ namespace LIB340
                     var res = new List<int>[n].Select(_ => new List<int>()).ToArray();
                     for (int i = 0; i < n; i++)
                     {
-                        if (p[i] >= 0) res[Root(i)].Add(i);
+                        if (P[i] >= 0) res[Root(i)].Add(i);
                         else res[i].Add(i);
                     }
                     return res.Where(vs => vs.Count > 0).ToArray();
@@ -632,9 +773,8 @@ namespace LIB340
 
 
         /// <summary>
-        /// 重み付きUF 子に値を持たせる。(重みはlong型)
+        /// 重み付きUnionFind 子に値を持たせる。(重みはlong型)
         /// マージ時に重みの差異を入力する
-        /// TODO UFの継承
         /// </summary>
         public class WeightedUnionFind
         {
@@ -646,6 +786,7 @@ namespace LIB340
                 rank = new int[N];
                 dW = new long[N];
             }
+            /// <summary>グループの結合</summary><param name="diff">重みの差異。</param><returns></returns>
             public bool Merge(int x, int y, long diff)
             {
                 diff += Weight(x) - Weight(y);
@@ -707,6 +848,7 @@ namespace LIB340
                 qFunc = qfunc;
                 init = _init;
             }
+            /// <summary>点aにxを追加します。 </summary>
             public void Update(int a, T x)
             {
                 a += N - 1;
@@ -717,8 +859,10 @@ namespace LIB340
                     dat[a] = updFunc(dat[(a << 1) + 1], dat[(a << 1) + 2]);
                 }
             }
-            public T Query(int a) => dat[N - 1 + a]; //点aを検索 O(1)
-            public T Query(int a, int b) => Query(a, b, 0, 0, N); //[a, b)を検索 O(logN)
+            /// <summary>点aのクエリ結果を返します。O(1)</summary>
+            public T Query(int a) => dat[N - 1 + a];
+            /// <summary>区間[a,b)のクエリ結果を返します。O(logN)</summary>
+            public T Query(int a, int b) => Query(a, b, 0, 0, N);
             private T Query(int a, int b, int k = 0, int l = 0, int r = 0)
             {
                 if (r <= a || b <= l) return init;
@@ -730,12 +874,15 @@ namespace LIB340
                     return qFunc(vl, vr);
                 }
             }
+            ///<summary> set => Update(a,value), get => Query(a)</summary>
             public T this[int a] { get => Query(a); set => Update(a, value); }
+
             public T this[int a, int b] => Query(a, b);
         }
 
+
         /// <summary>
-        /// 遅延評価セグツリー
+        /// 遅延評価セグメントツリー  範囲更新・範囲検索
         /// [a,b)に対する演算
         /// </summary>
         class LazySegTree
@@ -780,7 +927,9 @@ namespace LIB340
                 }
                 Lazy[k] = default;
             }
+            /// <summary>点a に値xを追加します。</summary>
             public void Update(int a, long x) => Update(a, a + 1, x, 0, 0, n);
+            /// <summary>区間[a,b) に値xを追加します。</summary>
             public void Update(int a, int b, long x) => Update(a, b, x, 0, 0, n); //[a,b)
             private void Update(int a, int b, long x, int k, int l, int r)
             {
@@ -798,8 +947,10 @@ namespace LIB340
                     Data[k] = updfunc(Data[k * 2 + 1], Data[k * 2 + 2]);
                 }
             }
-            public long Query(int a, int b) => Query(a, b, 0, 0, n);
+            /// <summary>点a の値を取得します。</summary>
             public long Query(int a) => Query(a, a + 1, 0, 0, n);
+            /// <summary>区間[a,b) の値を取得します。</summary>
+            public long Query(int a, int b) => Query(a, b, 0, 0, n);
             private long Query(int a, int b, int k, int l, int r)
             {
                 if (b <= l || r <= a) return 0;
@@ -819,8 +970,9 @@ namespace LIB340
 
         //TODO 区間加算の実装 このままではセグ木で物足りてしまう
         /// <summary>
-        /// BIT
-        /// 単更新 & 区間の和の取得 早めのLog(N)
+        /// BIT  セグ木より定数倍高速な範囲加算に。
+        /// Sum : O(log(N))
+        /// Add : O(log(N))
         /// </summary>
         class BIT
         {
@@ -831,6 +983,7 @@ namespace LIB340
                 data = new long[size + 1];
                 N = size;
             }
+
             public long Sum(int i)//[0,i)
             {
                 long s = 0;
@@ -865,6 +1018,7 @@ namespace LIB340
         }
 
         /// <summary>
+        /// 二次元BIT
         /// 単更新 & 二次元区間和の取得 Log(N)
         /// </summary>
         class BIT2D
@@ -902,6 +1056,7 @@ namespace LIB340
                 return sum;
             }
         }
+
 
 
         // Zアルゴリズム 先頭文字列と何文字一致しているか
@@ -946,10 +1101,12 @@ namespace LIB340
 
 
 
+
+
     namespace minerAlgolithms
     {
         /// <summary>
-        /// Dictionaryの代わり
+        /// defaultdict  pythonのdefaultdiftを参考にした。
         /// 無いキーを参照するとdefaultの値を返す。
         /// </summary>
         class DefaultDict<TKey, TValue> : Dictionary<TKey, TValue> //Dictionary
@@ -960,6 +1117,7 @@ namespace LIB340
                 get => TryGetValue(key, out TValue value) ? value : default;
             }
         }
+
 
         /// <summary>
         /// 入力に番号を割り振ります
@@ -983,11 +1141,66 @@ namespace LIB340
             public int Count => itemToIndex.Count;
         }
 
+        /// <summary>
+        /// 入力を独立な値に直し、ソートして番号を割り振ります。
+        /// データの追加は初期化時のみできます。
+        /// [ライブラリ] MySortedSet<T>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        class SortedIndexConverter<T> where T : IComparable
+        {
+            Dictionary<T, int> itemToIndex = new Dictionary<T, int>();
+            List<T> indexToItem = new List<T>();
+            public SortedIndexConverter(T[] items)
+            {
+                var sorted = new SortedSet<T>(items);
+                foreach (var item in sorted)
+                {
+                    itemToIndex.Add(item, itemToIndex.Count);
+                    indexToItem.Add(item);
+                }
+            }
+            public SortedIndexConverter(IEnumerable<T> items, Comparison<T> comp)
+            {
+                var sorted = new MySortedSet<T>(items, comp);
+                foreach (var item in sorted)
+                {
+                    itemToIndex.Add(item, itemToIndex.Count);
+                    indexToItem.Add(item);
+                }
+            }
+            public int this[T item] => itemToIndex[item];
+
+            public int Count => itemToIndex.Count;
+        }
+
+        /// <summary>
+        /// ComparisonをラップしたSortedSet
+        /// Comparisonでの比較ができる。
+        /// (int型でのテスト済み)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        class MySortedSet<T> : SortedSet<T> where T : IComparable
+        {
+            public MySortedSet() : base() { }
+            public MySortedSet(IEnumerable<T> data) : base(data) { }
+            public MySortedSet(Comparison<T> comp) : base(new Comp<T>(comp)) { }
+            public MySortedSet(IEnumerable<T> data, Comparison<T> comp) : base(data, new Comp<T>(comp)) { }
+            /// <summary>Comparisonのラッパー</summary>
+            class Comp<U> : IComparer<U> where U : IComparable
+            {
+                Comparison<U> comp;
+                public Comp(Comparison<U> _comp) => comp = _comp;
+                public int Compare(U x, U y) => comp(x, y);
+            }
+        }
+        
+
 
 
 
         /// <summary>
-        /// 累積和
+        /// 累積和  ちょっと使いにくい
         /// [a,b)の区間和の取得 Log(N)
         /// </summary>
         public class CumulativeSum
@@ -1019,8 +1232,8 @@ namespace LIB340
 
 
         /// <summary>
-        /// 二次元累積和
-        /// 二次元区間の区間和を求めます。
+        /// 二次元累積和  二次元区間の区間和を求めます。
+        /// 
         /// </summary>
         class CumulativeSum2D
         {
@@ -1118,9 +1331,7 @@ namespace LIB340
 
 
 
-        /// <summary>
-        /// 座標圧縮
-        /// </summary>
+        /// <summary> 座標圧縮 </summary>
         static class CoordinateCompression
         {
             public static int[] Compress(int[] A)
@@ -1145,20 +1356,46 @@ namespace LIB340
         }
 
     }
-    
-
-   
 
 
 
-    //これ、どう名付ければ...
-    namespace SOMETHINGS
+    //Modしない計算 BigInteger型で返す
+    // TODO 
+    /// <summary> </summary>
+    class BigMath
     {
-        
-
-        
-
-        
+        const int arysize = 100;
+        static BigInteger[] facs = new BigInteger[arysize];
+        static int facscount = -1;
+        public static BigInteger Fac(BigInteger n)
+        {
+            facs[0] = 1;
+            while (facscount <= n)
+            {
+                facs[++facscount + 1] = facs[facscount] * (facscount + 1);
+            }
+            return facs[(int)n];
+        }
+        public static BigInteger Fac(BigInteger n, BigInteger r)
+        {
+            BigInteger ans = n;
+            while (n++ < r)
+            {
+                ans *= n;
+            }
+            return ans;
+        }
+        public static BigInteger nCr(BigInteger n, BigInteger r)
+        {
+            return (n < r) ? 0
+                 : (n == r) ? 1
+                            : (BigInteger.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
+                                : Fac(n - r + 1, n) / Fac(r);
+        }
+        public static BigInteger nPr(BigInteger n, BigInteger r)
+        {
+            return Fac(n) / Fac(n - r);
+        }
     }
 
 
@@ -1366,78 +1603,7 @@ namespace LIB340
         public T this[int a, int b] { get => Query(a, b); set => Update(a, b, value); }
     }
 
-    // 両端キュー 双方向からpushできるqueue
-    //TODO BUG
-    class Deque<T>
-    {
-        T[] array;
-        int offset, size;
-        public int Count { get; private set; }
-        public Deque(int size)
-        {
-            array = new T[this.size = size];
-            Count = 0; offset = 0;
-        }
-        public Deque() : this(16) { }
-        public T this[int index] { get => array[GetIndex(index)]; set => array[GetIndex(index)] = value; }
-        int GetIndex(int index)
-        {
-            var tmp = index + offset;
-            return tmp >= size ? tmp - size : tmp;
-        }
-        public T PeekFront() => array[offset];
-        public T PeekBack() => array[GetIndex(Count - 1)];
-        public void PushFront(T item)
-        {
-            if (Count == size) Extend();
-            if (--offset < 0) offset += array.Length;
-            array[offset] = item;
-            Count++;
-        }
-        public void PushBack(T item)
-        {
-            if (Count == size) Extend();
-            var id = (Count++) + offset;
-            if (id >= size) id -= size;
-            array[id] = item;
-        }
-        public T PopFront()
-        {
-            Count--;
-            var tmp = array[offset++];
-            if (offset >= size) offset -= size;
-            return tmp;
-        }
-        public T PopBack() => array[GetIndex(--Count)];
-        public void Insert(int index, T item)
-        {
-            PushFront(item);
-            for (var i = 0; i < index; i++) this[i] = this[i + 1];
-            this[index] = item;
-        }
-        public T RemoveAt(int index)
-        {
-            var tmp = this[index];
-            for (var i = index; i > 0; i--) this[i] = this[i - 1];
-            PopFront();
-            return tmp;
-        }
-        void Extend()
-        {
-            var newArray = new T[size << 1];
-            if (offset > size - Count)
-            {
-                var length = array.Length - offset;
-                Array.Copy(array, offset, newArray, 0, length);
-                Array.Copy(array, 0, newArray, length, Count - length);
-            }
-            else Array.Copy(array, offset, newArray, 0, Count);
-            array = newArray;
-            offset = 0;
-            size <<= 1;
-        }
-    }
-
+    
    
 
 
@@ -1463,42 +1629,7 @@ namespace LIB340
 
     
 
-    //Modしない計算 BigInteger型で返す
-    class BigMath
-    {
-        const int arysize = 100;
-        static BigInteger[] facs = new BigInteger[arysize];
-        static int facscount = -1;
-        public static BigInteger Fac(BigInteger n)
-        {
-            facs[0] = 1;
-            while (facscount <= n)
-            {
-                facs[++facscount + 1] = facs[facscount] * (facscount + 1);
-            }
-            return facs[(int)n];
-        }
-        public static BigInteger Fac(BigInteger n, BigInteger r)
-        {
-            BigInteger ans = n;
-            while (n++ < r)
-            {
-                ans *= n;
-            }
-            return ans;
-        }
-        public static BigInteger nCr(BigInteger n, BigInteger r)
-        {
-            return (n < r) ? 0
-                 : (n == r) ? 1
-                            : (BigInteger.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
-                                : Fac(n - r + 1, n) / Fac(r);
-        }
-        public static BigInteger nPr(BigInteger n, BigInteger r)
-        {
-            return Fac(n) / Fac(n - r);
-        }
-    }
+    
     
 
 
@@ -1514,8 +1645,10 @@ namespace LIB340
             static int cursor = 0, length = 0;
             static StaticScanner()
             {
+
                 reader = Console.OpenStandardInput();
             }
+            public static void CloseReader() => reader.Close();
             public static string RStr()
             {
                 var line = new System.Text.StringBuilder();
@@ -1579,6 +1712,12 @@ namespace LIB340
 
         public static class Template
         {
+            public static T[] Copy<T>(this T[] sourse)
+            {
+                T[] res = new T[sourse.Length];
+                Array.Copy(sourse, res, sourse.Length);
+                return res;
+            }
             public static void CopyTo<T>(this T[] source, T[] destination) => Array.Copy(source, destination, source.Length);
             public static void CopyTo(this Array ary, Array dest) => Array.Copy(ary, dest, ary.Length);
             public static void Fill<T>(this T[] ary, T init) => ary.AsSpan().Fill(init);
@@ -1787,6 +1926,10 @@ namespace ForHeuristic
 
 
 
+
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 /// //////////////////////////////////////////////////////////////////////////
@@ -1801,6 +1944,7 @@ namespace ForHeuristic
 
 
 
+
 namespace TEST
 {
     using CHANGEABLEGRAPH;
@@ -1808,8 +1952,8 @@ namespace TEST
     /// グラフにDictinaryを乗せてみた
     /// 辺の追加が通常の2倍遅い(20000辺 => 5.74ms)
     /// ダイクストラの速度は大して変わらなかった (100ダイク*10000 => 189ms)
-    /// 辺重複不可
-    /// 辺削除可
+    /// 最大流に対応するためEdgeはクラスにしている。
+    /// 辺重複不可 辺削除可
     /// </summary>
     namespace CHANGEABLEGRAPH
     {
@@ -1950,62 +2094,10 @@ namespace TEST
 
 
 
+    // 両端キュー 双方向からpushできるqueue
+    
 
 
-    namespace Scanner
-    {
-
-
-        /// <summary>
-        /// 事前には入力が決まらない場合はこちらを使います。
-        /// </summary>
-        public static class DynamicScanner
-        {
-            public static string RString() => Console.ReadLine();
-            public static int RInt() => RTuple<int>();
-            public static long RLong() => RTuple<long>();
-            public static double RDouble() => RTuple<double>();
-            public static string[] RStrings() => Console.ReadLine().Split();
-            public static int[] RInts() => Array.ConvertAll(RStrings(), int.Parse);
-            public static long[] RLongs() => Array.ConvertAll(RStrings(), long.Parse);
-            public static double[] RDoubles() => Array.ConvertAll(RStrings(), double.Parse);
-            public static int[] RInts(Func<int, int> func) => RInts().Select(func).ToArray();
-            public static long[] RLongs(Func<long, long> func) => RLongs().Select(func).ToArray();
-            public static double[] RDoubles(Func<double, double> func) => RDoubles().Select(func).ToArray();
-            public static int[][] RIntss(int len) => new int[len][].Select(_ => RInts()).ToArray();
-            public static long[][] RLongss(int len) => new long[len][].Select(_ => RLongs()).ToArray();
-            public static double[][] RDoubless(int len) => new double[len][].Select(_ => RDoubles()).ToArray();
-            public static int[][] RIntss(int len, Func<int, int> func) => new int[len][].Select(_ => RInts(func)).ToArray();
-            public static long[][] RLongss(int len, Func<long, long> func) => new long[len][].Select(_ => RLongs(func)).ToArray();
-            public static double[][] RDoubless(int len, Func<double, double> func) => new double[len][].Select(_ => RDoubles(func)).ToArray();
-            private static T ChType<T>(string r) => (T)Convert.ChangeType(r, typeof(T));
-            public static T1 RTuple<T1>()
-            {
-                var r = RString();
-                return ChType<T1>(r);
-            }
-            public static (T1, T2) RTuple<T1, T2>()
-            {
-                var r = RStrings();
-                return (ChType<T1>(r[0]), ChType<T2>(r[1]));
-            }
-            public static (T1, T2, T3) RTuple<T1, T2, T3>()
-            {
-                var r = RStrings();
-                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]));
-            }
-            public static (T1, T2, T3, T4) RTuple<T1, T2, T3, T4>()
-            {
-                var r = RStrings();
-                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]));
-            }
-            public static (T1, T2, T3, T4, T5) RTuple<T1, T2, T3, T4, T5>()
-            {
-                var r = RStrings();
-                return (ChType<T1>(r[0]), ChType<T2>(r[1]), ChType<T3>(r[2]), ChType<T4>(r[3]), ChType<T5>(r[4]));
-            }
-        }
-    }
 
 }
 
@@ -2045,7 +2137,7 @@ namespace SegTree
     }
     /// <summary>
     /// セグメントツリー
-    /// モノイド で実装した
+    /// モノイド を実装した
     /// </summary>
     class SegTree<T> where T:IMonoid<T>
     {
