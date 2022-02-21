@@ -8,6 +8,7 @@ using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 using BigInteger = System.Numerics.BigInteger;
 using StringBuilder = System.Text.StringBuilder;
 using LIB340.TEMPLATES;
+using LIB340.DataStructure;
 /// <summary>
 /// C# 競技プログラミング用ライブラリ
 /// [使い方]
@@ -40,635 +41,444 @@ using LIB340.TEMPLATES;
 /// 両端キュー :Deque
 /// 累積和 : CumulativeSum
 /// 座標圧縮 : CoordinateCompression
-/// 
+///
+/// その他 DOC
+/// DPはパスカルの三角形を意識する
 /// </summary>
 
 namespace LIB340
 {
 
-    namespace MajorAlgolithm
+    // アルゴリズム データ構造 の順で並べる
+    // よく使うものほど前に
+    namespace MathLIB
     {
-        namespace MathLIB
+        public static class MyMath
         {
-            public static class MyMath
+            /// <summary>最大公約数  </summary>
+            public static long GCD(long a, long b) => a == 0 ? b : GCD(b % a, a);
+            /// <summary>最小公倍数 </summary>
+            public static long LCM(long a, long b) => a / GCD(a, b) * b;
+            /// <summary>拡張GCD  ax + by = gcd(a,b) </summary>
+            public static (long x, long y) extGCD(long a, long b)
             {
-                /// <summary>最大公約数  </summary>
-                public static long GCD(long a, long b) => a == 0 ? b : GCD(b % a, a);
-
-                /// <summary>拡張GCD  ax + by = gcd(a,b) </summary>
-                public static (long x, long y) extGCD(long a, long b)
+                if (a < b)
                 {
-                    if (a < b)
+                    var (x, y) = extGCD(b, a);
+                    return (y, x);
+                }
+                if (b == 0) return (1, 0);
+                else
+                {
+                    var t = extGCD(b, a % b);
+                    return (t.y, t.x - a / b * t.y);
+                }
+            }
+
+            public static bool IsPrime(int num)
+            {
+                for (int i = 2; i * i <= num; i++)
+                {
+                    if (num % i == 0) return false;
+                }
+                return true;
+            }
+
+            /// <summary>冪剰余 (a^n % mod).  a <= 10^9 </summary>
+            public static long ModPow(long a, long n, long mod)
+            {
+                long res = 1;
+                while (n > 0)
+                {
+                    if ((n & 1) >= 1) res = res * a % mod;
+                    a = a * a % mod;
+                    n >>= 1;
+                }
+                return res;
+            }
+
+            /// <summary>
+            /// 全順列列挙。
+            /// [1,2,3] -> [1,2,3],[2,1,3],[3,1,2],[1,3,2],[2,3,1],[3,2,1]
+            /// </summary>
+            public static IEnumerable<IEnumerable<T>> Permutation<T>(IEnumerable<T> source)
+            {
+                var items = source.ToArray();
+                yield return items;
+                var counter = new int[items.Length];
+                var idx = 0;
+                var count = 0;
+                var fact = 1L;
+                for (var i = 1; i <= items.Length; i++) fact *= i;
+                while (idx < items.Length)
+                {
+                    if (counter[idx] < idx)
                     {
-                        var (x, y) = extGCD(b, a);
-                        return (y, x);
+                        if (idx % 2 == 0) (items[0], items[idx]) = (items[idx], items[0]);
+                        else (items[counter[idx]], items[idx]) = (items[idx], items[counter[idx]]);
+                        yield return items;
+                        counter[idx]++;
+                        count++;
+                        idx = 0;
                     }
-                    if (b == 0) return (1, 0);
                     else
                     {
-                        var t = extGCD(b, a % b);
-                        return (t.y, t.x - a / b * t.y);
+                        counter[idx] = 0;
+                        idx++;
                     }
+                    if (count == fact) yield break;
                 }
+            }
 
-                /// <summary>最小公倍数 </summary>
-                public static long LCM(long a, long b) => a / GCD(a, b) * b;
-
-                /// <summary>冪剰余 (a^n % mod).  a <= 10^9 </summary>
-                public static long ModPow(long a, long n, long mod)
+            /// <summary>進数変換 </summary>
+            public static int[] ConvertBase(long sourse, int b)
+            {
+                long num = 1;
+                while (num <= sourse)
                 {
-                    long res = 1;
-                    while (n > 0)
-                    {
-                        if ((n & 1) >= 1) res = res * a % mod;
-                        a = a * a % mod;
-                        n >>= 1;
-                    }
-                    return res;
+                    num *= b;
                 }
-
-                /// <summary>進数変換 </summary>
-                public static int[] ConvertBase(long sourse, int b)
+                num /= b;
+                List<int> ans = new List<int>();
+                while (num >= 1)
                 {
-                    long num = 1;
-                    while (num <= sourse)
-                    {
-                        num *= b;
-                    }
+                    int c = (int)(sourse / num);
+                    ans.Add(c);
+                    sourse -= num * c;
                     num /= b;
-                    List<int> ans = new List<int>();
-                    while (num >= 1)
-                    {
-                        int c = (int)(sourse / num);
-                        ans.Add(c);
-                        sourse -= num * c;
-                        num /= b;
-                    }
-                    return ans.ToArray();
                 }
-
-                /// <summary>
-                /// 全順列列挙。
-                /// [1,2,3] -> [1,2,3],[2,1,3],[3,1,2],[1,3,2],[2,3,1],[3,2,1]
-                /// </summary>
-                public static IEnumerable<IEnumerable<T>> Permutation<T>(IEnumerable<T> source)
-                {
-                    var items = source.ToArray();
-                    yield return items;
-                    var counter = new int[items.Length];
-                    var idx = 0;
-                    var count = 0;
-                    var fact = 1L;
-                    for (var i = 1; i <= items.Length; i++) fact *= i;
-                    while (idx < items.Length)
-                    {
-                        if (counter[idx] < idx)
-                        {
-                            if (idx % 2 == 0) (items[0], items[idx]) = (items[idx], items[0]);
-                            else (items[counter[idx]], items[idx]) = (items[idx], items[counter[idx]]);
-                            yield return items;
-                            counter[idx]++;
-                            count++;
-                            idx = 0;
-                        }
-                        else
-                        {
-                            counter[idx] = 0;
-                            idx++;
-                        }
-                        if (count == fact) yield break;
-                    }
-                }
-
+                return ans.ToArray();
             }
 
-            // 1000000007でModした計算
-            //静的な値で剰余した値を返します。
-            struct Modular
-            {
-                const int M = 1000000007;
-                const int arysize = 2000001;
-                long value;
-                public Modular(long value = 0) { this.value = value; }
-                public override string ToString() { return value.ToString(); }
-                public static implicit operator Modular(long a)
-                {
-                    var m = a % M;
-                    return new Modular((m < 0) ? m + M : m);
-                }
-                public static Modular operator +(Modular a, Modular b) => a.value + b.value;
-                public static Modular operator -(Modular a, Modular b) => a.value - b.value;
-                public static Modular operator *(Modular a, Modular b) => a.value * b.value;
-                public static Modular operator /(Modular a, Modular b) => a * Pow(b, M - 2);
-                public static Modular operator ++(Modular a) => a.value + 1;
-                public static Modular operator --(Modular a) => a.value - 1;
-                public static Modular Pow(Modular a, long n)
-                {
-                    Modular ans = 1;
-                    for (; n > 0; n >>= 1, a *= a)
-                    {
-                        if ((n & 1) == 1) ans *= a;
-                    }
-                    return ans;
-                }
-                static int[] facs = new int[arysize];
-                static int facscount = -1;
-                public static Modular Fac(int n)   //階乗
-                {
-                    facs[0] = 1;
-                    while (facscount <= n)
-                    {
-                        facs[++facscount + 1] = (int)(Math.BigMul(facs[facscount], facscount + 1) % M);
-                    }
-                    return facs[n];
-                }
-                public static Modular Fac(int r, int n)//記録しない階乗
-                {
-                    int temp = 1;
-                    for (int i = r; i <= n; i++)
-                    {
-                        temp = (int)(Math.BigMul(temp, i) % M);
-                    }
-                    return temp;
-                }
-                public static Modular Ncr(int n, int r) //nCr
-                {
-                    return (n < r) ? 0
-                         : (n == r) ? 1
-                                    : (Math.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
-                                        : Fac(n - r + 1, n) / Fac(r);
-                }
-                public static Modular Npr(int n, int r)
-                {
-                    if (Math.Max(n, r) <= arysize) return Fac(n) / Fac(n - r);
-                    return Fac(n - r + 1, n);
-                }
-                public static explicit operator int(Modular a)
-                {
-                    return (int)a.value;
-                }
-            }
-
-            /// <summary>
-            /// 値がModされる 行列を扱います
-            /// TODO 機能追加
-            /// </summary>
-            class ModMat
-            {
-                long[,] Data;
-                static readonly long Mod = 1000000007;
-                public ModMat(int _size)
-                {
-                    Size = _size;
-                    Data = new long[Size, Size];
-                }
-                public ModMat(int[,] _mat)
-                {
-                    Size = _mat.GetLength(0);
-                    Data = new long[Size, Size];
-                    Array.Copy(_mat, Data, Size * Size);
-                }
-                public int Size { get; }
-                public long this[int i, int j]
-                {
-                    get => Data[i, j];
-                    set { Data[i, j] = value; Data[i, j] %= Mod; }
-                }
-                public static ModMat operator +(ModMat A, ModMat B)
-                {
-                    if (A.Size != B.Size) throw new Exception($"ex at'+' a.size={A.Size} b.size={B.Size}");
-                    for (int i = 0; i < A.Size; i++)
-                    {
-                        for (int j = 0; j < A.Size; j++)
-                        {
-                            A[i, j] = (A[i, j] + B[i, j]) % Mod;
-                        }
-                    }
-                    return A;
-                }
-                public static ModMat operator -(ModMat A, ModMat B)
-                {
-                    if (A.Size != B.Size) throw new Exception($"ex at'-' a.size={A.Size} b.size={B.Size}");
-                    for (int i = 0; i < A.Size; i++)
-                    {
-                        for (int j = 0; j < A.Size; j++)
-                        {
-                            A[i, j] = (A[i, j] - B[i, j] + Mod) % Mod;
-                        }
-                    }
-                    return A;
-                }
-                public static ModMat operator *(ModMat A, ModMat B)
-                {
-                    if (A.Size != B.Size) throw new Exception($"ex at'*' a.size={A.Size} b.size={B.Size}");
-                    int N = A.Size;
-                    var c = new ModMat(N);
-                    for (int i = 0; i < N; i++)
-                    {
-                        for (int k = 0; k < N; k++)
-                        {
-                            for (int j = 0; j < N; j++)
-                            {
-                                c[i, j] = (c[i, j] + A[i, k] * B[k, j]) % Mod;
-                            }
-                        }
-                    }
-                    return c;
-                }
-                public static ModMat operator *(ModMat A, long b)
-                {
-                    var C = new ModMat(A.Size);
-                    for (int i = 0; i < A.Size; i++)
-                    {
-                        for (int j = 0; j < A.Size; j++)
-                        {
-                            C[i, j] = A[i, j] * b % Mod;
-                        }
-                    }
-                    return C;
-                }
-                public static ModMat Pow(ModMat A, long n)
-                {
-                    ModMat B = new ModMat(A.Size);
-                    for (int i = 0; i < A.Size; i++)
-                    {
-                        B[i, i] = 1;
-                    }
-                    while (n > 0)
-                    {
-                        if ((n & 1) == 1) B *= A;
-                        A = A * A;
-                        n >>= 1;
-                    }
-                    return B;
-                }
-            }
+            
 
         }
 
-
-       /// <summary>
-       /// グラフを使ったライブラリ群。
-       /// </summary>
-        namespace GraphExtension
+        //Modしない計算 BigInteger型で返す
+        // TODO 
+        /// <summary>
+        /// BigInterger型の演算を追加します。
+        /// </summary>
+        class BigIntegerExtension
         {
-                /// <summary>
-                /// グラフ
-                /// 追加する辺次第で重み有り無し　変更できます。
-                /// 
-                /// 隣接リスト(グラフ) サイズの自動拡張機能つき
-                /// new時にサイズ指定するとサイズは固定
-                /// 辺重複可
-                /// </summary>
-                /// <typeparam name="TEdge"></typeparam>
+
+            const int arysize = 100;
+            static BigInteger[] facs = new BigInteger[arysize];
+            static int facscount = -1;
+            public static BigInteger Fac(BigInteger n)
+            {
+                facs[0] = 1;
+                while (facscount <= n)
+                {
+                    facs[++facscount + 1] = facs[facscount] * (facscount + 1);
+                }
+                return facs[(int)n];
+            }
+            public static BigInteger Fac(BigInteger n, BigInteger r)
+            {
+                BigInteger ans = n;
+                while (n++ < r)
+                {
+                    ans *= n;
+                }
+                return ans;
                 
-                class Graph<TEdge>
-                {
-                    int maxsize = 0;
-                    private Node<TEdge>[] G;
-                    public Graph(int size = 1024)
-                    {
-                        maxsize = size;
-                        G = new Node<TEdge>[size].Select(_ => _ = new Node<TEdge>()).ToArray();
-                    }
-                    /// <summary>一方向に辺を追加します。</summary>
-                    /// <param name="edge"></param>
-                    public void Add(Edge<TEdge> edge)
-                    {
-                        while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
-                        G[edge.From].edges.Add(edge);
-                    }
-                    /// <summary>双方向に辺を追加します。</summary>
-                    public void AddBoth(Edge<TEdge> edge)
-                    {
-                        Add(edge);
-                        Add(new Edge<TEdge> { From = edge.To, To = edge.From, Value = edge.Value });
-                    }
-                    private void Expand()
-                    {
-                        var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node<TEdge>()).ToArray();
-                        Array.Copy(G, temp, G.Length);
-                        G = temp;
-                    }
-                    public IEnumerable<Edge<TEdge>> GetEdges()
-                    {
-                        foreach (var node in G)
-                            foreach (var edge in node)
-                                yield return edge;
-                    }
-                    public int Length => G.Length;
-                    public Node<TEdge> this[int i] => G[i];
-                    public IEnumerator<Node<TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
-                }
-                class Graph : Graph<int>
-                {
-                    public Graph(int size = 1024) : base(size) { }
-                }
-                public class Node<Tedge>
-                {
-                    public List<Edge<Tedge>> edges = new List<Edge<Tedge>>();
-                    public static implicit operator List<Edge<Tedge>>(Node<Tedge> node) => node.edges;
-                    public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.GetEnumerator();
-                }
-                public struct Edge<T>
-                {
-                    public int From, To;
-                    public T Value;
-                    public Edge(int from, int to, T value = default)
-                    {
-                        From = from; To = to; Value = value;
-                    }
-                }
-
-
-            /// <summary>
-            /// ダイクストラ  始点から各頂点までの最小コストを求めます。 (有向グラフの拡張メソッド)
-            /// 必要なライブラリ : [優先キュー] [グラフ]
-            /// ※注意  負辺が含まれるとO(2^n)になるケースがあります。
-            /// Search : O(ElogV)
-            /// </summary>
-            static class Dijkstraa
-            {
-                public static long dijkstra(this Graph<long> G, int from, int to) => dijkstra(G, from)[to];
-                public static long dijkstra(this Graph<long> G, int from, int to, Comparison<(int to, long cost)> comp) => dijkstra(G, from, comp)[to];
-                public static long[] dijkstra(this Graph<long> G, int from) => dijkstra(G, from, (x, y) => x.cost.CompareTo(y.cost));
-                public static long[] dijkstra(this Graph<long> G, int from, Comparison<(int to, long cost)> comp)
-                {
-                    var d = Enumerable.Repeat(long.MaxValue / 4, G.Length).ToArray();
-                    var que = new PriorityQueue<(int to, long cost)>(comp);
-                    d[from] = 0;
-                    que.Enqueue((from, 0));
-                    while (que.Count > 0)
-                    {
-                        var (v, c) = que.Dequeue();
-                        if (d[v] < c) continue;
-                        foreach (var edge in G[v])
-                        {
-                            long ecost = (long)(edge.Value);
-
-                            int nv = edge.To;
-                            long nc = d[v] + ecost;
-                            if (d[nv] > nc)
-                            {
-                                que.Enqueue((nv, d[nv] = nc));
-                            }
-                        }
-                    }
-                    return d;
-                }
-                static long ChLong(object value) => (long)Convert.ChangeType(value, typeof(long));
             }
-
-            // (スニペット済み)
-            /// <summary>
-            /// 両端キュー 配列の前後で追加•Pop操作ができます 。
-            /// PushFront & PushBack : O(1)
-            /// PopFront & PopBack : O(1)
-            /// PeekFront & PeekBack : O(1)
-            /// </summary>
-            /// <typeparam name="T"></typeparam>
-            class Deque<T> : IEnumerable<T>
+            public static BigInteger nCr(BigInteger n, BigInteger r)
             {
-                T[] buf;
-                int offset, count, cap;
-                public int Count { get { return count; } }
-                public Deque(IEnumerable<T> collection) : this()
-                {
-                    foreach (var item in collection) PushBack(item);
-                }
-                public Deque(int cap) { buf = new T[this.cap = cap]; }
-                public Deque() { buf = new T[cap = 16]; }
-                public T this[int index]
-                {
-                    get { return buf[GetIndex(index)]; }
-                    set { buf[GetIndex(index)] = value; }
-                }
-                private int GetIndex(int index)
-                {
-                    if (index >= cap) throw new IndexOutOfRangeException();
-                    var ret = index + offset;
-                    return ret >= cap ? ret - cap : ret;
-                }
-                public T PeekFront() => buf[offset];
-                public T PeekBack() => buf[GetIndex(Count - 1)];
-                public void PushFront(T item)
-                {
-                    if (count == cap) Extend();
-                    if (--offset < 0) offset += buf.Length;
-                    buf[offset] = item;
-                    ++count;
-                }
-                public T PopFront()
-                {
-                    if (count == 0) throw new InvalidOperationException("collection is empty");
-                    --count;
-                    var ret = buf[offset++];
-                    if (offset >= cap) offset -= cap;
-                    return ret;
-                }
-                public void PushBack(T item)
-                {
-                    if (count == cap) Extend();
-                    var id = count++ + offset;
-                    if (id >= cap) id -= cap;
-                    buf[id] = item;
-                }
-                public T PopBack()
-                {
-                    if (count == 0) throw new InvalidOperationException("collection is empty");
-                    return buf[GetIndex(--count)];
-                }
-                public void Insert(int index, T item)
-                {
-                    if (index > count) throw new IndexOutOfRangeException();
-                    this.PushFront(item);
-                    for (int i = 0; i < index; i++)
-                        this[i] = this[i + 1];
-                    this[index] = item;
-                }
-                public T RemoveAt(int index)
-                {
-                    if (index < 0 || index >= count) throw new IndexOutOfRangeException();
-                    var ret = this[index];
-                    for (int i = index; i > 0; i--)
-                        this[i] = this[i - 1];
-                    this.PopFront();
-                    return ret;
-                }
-                void Extend()
-                {
-                    T[] newBuffer = new T[cap << 1];
-                    if (offset > cap - count)
-                    {
-                        var len = buf.Length - offset;
-                        Array.Copy(buf, offset, newBuffer, 0, len);
-                        Array.Copy(buf, 0, newBuffer, len, count - len);
-                    }
-                    else Array.Copy(buf, offset, newBuffer, 0, count);
-                    buf = newBuffer;
-                    offset = 0;
-                    cap <<= 1;
-                }
-
-                public IEnumerator<T> GetEnumerator() => Items.ToList().GetEnumerator();
-
-                IEnumerator IEnumerable.GetEnumerator()
-                {
-                    throw new NotImplementedException();
-                }
-
-                public T[] Items//デバッグ時に中身を調べるためのプロパティ
-                {
-                    get
-                    {
-                        var a = new T[count];
-                        for (int i = 0; i < count; i++)
-                            a[i] = this[i];
-                        return a;
-                    }
-                }
+                return (n < r) ? 0
+                     : (n == r) ? 1
+                                : (BigInteger.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
+                                    : Fac(n - r + 1, n) / Fac(r);
             }
-
-            // (スニペット済み)
-            /// <summary>
-            /// 優先キュー 優先度の高い要素から順に取り出します。
-            /// Enqueue : O(logN)
-            /// Dequeue : O(logN)
-            /// Peek : O(1)
-            /// </summary>
-            /// <typeparam name="T"></typeparam>
-            class PriorityQueue<T> : IEnumerable<T>, ICollection, IEnumerable, ICloneable
+            public static BigInteger nPr(BigInteger n, BigInteger r)
             {
-                List<T> m_heap;
-                Comparison<T> Comp;
-                public int Count => m_heap.Count;
-                public bool IsEmpty => Count == 0;
-                public PriorityQueue(IEnumerable<T> source) : this(null, 16, source) { }
-                public PriorityQueue(int capacity = 16, IEnumerable<T> source = null) : this(null, capacity, source) { }
-                public PriorityQueue(Comparison<T> comp, IEnumerable<T> source) : this(comp, 16, source) { }
-                public PriorityQueue(Comparison<T> comp, int capacity = 16, IEnumerable<T> source = null) { this.Comp = comp == null ? (x, y) => Comparer<T>.Default.Compare(x, y) : comp; m_heap = new List<T>(capacity); if (source != null) foreach (var x in source) Enqueue(x); }
-                /// <summary>要素を追加します。</summary>
-                public void Enqueue(T x)
-                {
-                    var pos = Count;
-                    m_heap.Add(x);
-                    while (pos > 0)
-                    {
-                        var p = (pos - 1) / 2;
-                        if (Comp(m_heap[p], x) <= 0) break;
-                        m_heap[pos] = m_heap[p];
-                        pos = p;
-                    }
-                    m_heap[pos] = x;
-                    var que = new Queue<int>();
-                    
-                }
-                /// <summary>先頭の要素を取り出します。(値はキューから削除。)</summary>
-                public T Dequeue()
-                {
-                    var value = m_heap[0];
-                    var x = m_heap[Count - 1];
-                    m_heap.RemoveAt(Count - 1);
-                    if (Count == 0) return value;
-                    var pos = 0;
-                    while (pos * 2 + 1 < Count)
-                    {
-                        var a = 2 * pos + 1;
-                        var b = 2 * pos + 2;
-                        if (b < Count && Comp(m_heap[b], m_heap[a]) < 0) a = b;
-                        if (Comp(m_heap[a], x) >= 0) break;
-                        m_heap[pos] = m_heap[a];
-                        pos = a;
-                    }
-                    m_heap[pos] = x;
-                    return value;
-                }
-                /// <summary>先頭の要素を取得します。 (値はキューに保持。)</summary>
-                public T Peek() => m_heap[0];
-                public IEnumerator<T> GetEnumerator() { var x = (PriorityQueue<T>)Clone(); while (x.Count > 0) yield return x.Dequeue(); }
-                void CopyTo(Array array, int index) { foreach (var x in this) array.SetValue(x, index++); }
-                public object Clone() { var x = new PriorityQueue<T>(Comp, Count); x.m_heap.AddRange(m_heap); return x; }
-                public void Clear() => m_heap = new List<T>();
-                public void TrimExcess() => m_heap.TrimExcess();
-                public bool Contains(T item) { return m_heap.Contains(item); } //O(N)
-                IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-                void ICollection.CopyTo(Array array, int index) => CopyTo(array, index);
-                bool ICollection.IsSynchronized => false;
-                object ICollection.SyncRoot => this;
-            }
-
-
-
-            /// <summary>
-            /// 最小全域木　(無向グラフの拡張メソッド)
-            /// 必要なライブラリ : [UnionFind] [グラフ]
-            /// </summary>
-            static class Kruskal
-            {
-                /// <summary>グラフを最小全域木に変換します。</summary>
-                public static Graph<long> MinimumSpanningTree(this Graph<long> G, Comparison<Edge<long>> comp = null)
-                {
-                    comp ??= (a, b) => a.Value.CompareTo(b.Value);
-                    var res = new Graph<long>();
-                    var union = new UnionFind(G.Length);
-                    var edges = G.GetEdges().ToArray();
-                    Array.Sort(edges, comp);
-                    foreach (var e in edges)
-                    {
-                        if (union.IsSame(e.From, e.To)) continue;
-                        union.Unite(e.From, e.To);
-                        res.AddBoth(new Edge<long> { From = e.From, To = e.To, Value = e.Value });
-                    }
-                    return res;
-                }
-                /// <summary>全区間の距離(コスト)の和を求めます。</summary>
-                public static long CostSum(this Graph<long> G)
-                {
-                    var res = 0L;
-                    foreach (var item in G.GetEdges())
-                    {
-                        res += item.Value;
-                    }
-                    return res / 2;
-                }
-            }
-
-
-            /// <summary>
-            /// トポロジカルソート  DAGを順序付けし、起点の要素から並べた一次元配列に直します。
-            /// </summary>
-            static class TopologicalSort
-            {
-                // TODO Degreesの実装
-                /// <summary>トポロジカルソートした結果を返します。不可能な場合nullを返します。</summary>
-                /// <param name="G">グラフ</param>
-                /// <param name="Degrees">Degreesはその頂点にのびる辺の数</param>
-                /// <returns></returns>
-                public static List<int> Topologicalsort(Graph<int> G, int[] Degrees)
-                {
-                    var que = new Queue<int>();
-                    for (int i = 0; i < Degrees.Length; i++)
-                    {
-                        if (Degrees[i] == 0) que.Enqueue(i);
-                    }
-                    var sorted = new List<int>();
-                    while (que.Count > 0)
-                    {
-                        var v = que.Dequeue();
-                        sorted.Add(v);
-                        foreach (var i in G[v])
-                        {
-                            Degrees[i.To]--;
-                            if (Degrees[i.To] == 0) que.Enqueue(i.To);
-                        }
-                    }
-                    if (Degrees.Length != sorted.Count) return null;
-                    return sorted;
-                }
+                return Fac(n) / Fac(n - r);
             }
         }
 
-        
+        // 1000000007でModした計算
+        /// <summary>
+        /// 静的な値で剰余した値を返します。
+        /// </summary>
+        struct Modular
+        {
+            const int M = 1000000007;
+            const int arysize = 2000001;
+            long value;
+            public Modular(long value = 0) { this.value = value; }
+            public override string ToString() { return value.ToString(); }
+            public static implicit operator Modular(long a)
+            {
+                var m = a % M;
+                return new Modular((m < 0) ? m + M : m);
+            }
+            public static Modular operator +(Modular a, Modular b) => a.value + b.value;
+            public static Modular operator -(Modular a, Modular b) => a.value - b.value;
+            public static Modular operator *(Modular a, Modular b) => a.value * b.value;
+            public static Modular operator /(Modular a, Modular b) => a * Pow(b, M - 2);
+            public static Modular operator ++(Modular a) => a.value + 1;
+            public static Modular operator --(Modular a) => a.value - 1;
+            public static Modular Pow(Modular a, long n)
+            {
+                Modular ans = 1;
+                for (; n > 0; n >>= 1, a *= a)
+                {
+                    if ((n & 1) == 1) ans *= a;
+                }
+                return ans;
+            }
+            static int[] facs = new int[arysize];
+            static int facscount = -1;
+            public static Modular Fac(int n)   //階乗
+            {
+                facs[0] = 1;
+                while (facscount <= n)
+                {
+                    facs[++facscount + 1] = (int)(Math.BigMul(facs[facscount], facscount + 1) % M);
+                }
+                return facs[n];
+            }
+            public static Modular Fac(int r, int n)//記録しない階乗
+            {
+                int temp = 1;
+                for (int i = r; i <= n; i++)
+                {
+                    temp = (int)(Math.BigMul(temp, i) % M);
+                }
+                return temp;
+            }
+            public static Modular Ncr(int n, int r) //nCr
+            {
+                return (n < r) ? 0
+                     : (n == r) ? 1
+                                : (Math.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
+                                    : Fac(n - r + 1, n) / Fac(r);
+            }
+            public static Modular Npr(int n, int r)
+            {
+                if (Math.Max(n, r) <= arysize) return Fac(n) / Fac(n - r);
+                return Fac(n - r + 1, n);
+            }
+            public static explicit operator int(Modular a)
+            {
+                return (int)a.value;
+            }
+        }
+
+        /// <summary>
+        /// 値が静的な値で剰余される行列を扱います。
+        /// TODO 機能追加
+        /// </summary>
+        class ModMat
+        {
+            long[,] Data;
+            static readonly long Mod = 1000000007;
+            public ModMat(int _size)
+            {
+                Size = _size;
+                Data = new long[Size, Size];
+            }
+            public ModMat(int[,] _mat)
+            {
+                Size = _mat.GetLength(0);
+                Data = new long[Size, Size];
+                Array.Copy(_mat, Data, Size * Size);
+            }
+            public int Size { get; }
+            public long this[int i, int j]
+            {
+                get => Data[i, j];
+                set { Data[i, j] = value; Data[i, j] %= Mod; }
+            }
+            public static ModMat operator +(ModMat A, ModMat B)
+            {
+                if (A.Size != B.Size) throw new Exception($"ex at'+' a.size={A.Size} b.size={B.Size}");
+                for (int i = 0; i < A.Size; i++)
+                {
+                    for (int j = 0; j < A.Size; j++)
+                    {
+                        A[i, j] = (A[i, j] + B[i, j]) % Mod;
+                    }
+                }
+                return A;
+            }
+            public static ModMat operator -(ModMat A, ModMat B)
+            {
+                if (A.Size != B.Size) throw new Exception($"ex at'-' a.size={A.Size} b.size={B.Size}");
+                for (int i = 0; i < A.Size; i++)
+                {
+                    for (int j = 0; j < A.Size; j++)
+                    {
+                        A[i, j] = (A[i, j] - B[i, j] + Mod) % Mod;
+                    }
+                }
+                return A;
+            }
+            public static ModMat operator *(ModMat A, ModMat B)
+            {
+                if (A.Size != B.Size) throw new Exception($"ex at'*' a.size={A.Size} b.size={B.Size}");
+                int N = A.Size;
+                var c = new ModMat(N);
+                for (int i = 0; i < N; i++)
+                {
+                    for (int k = 0; k < N; k++)
+                    {
+                        for (int j = 0; j < N; j++)
+                        {
+                            c[i, j] = (c[i, j] + A[i, k] * B[k, j]) % Mod;
+                        }
+                    }
+                }
+                return c;
+            }
+            public static ModMat operator *(ModMat A, long b)
+            {
+                var C = new ModMat(A.Size);
+                for (int i = 0; i < A.Size; i++)
+                {
+                    for (int j = 0; j < A.Size; j++)
+                    {
+                        C[i, j] = A[i, j] * b % Mod;
+                    }
+                }
+                return C;
+            }
+            public static ModMat Pow(ModMat A, long n)
+            {
+                ModMat B = new ModMat(A.Size);
+                for (int i = 0; i < A.Size; i++)
+                {
+                    B[i, i] = 1;
+                }
+                while (n > 0)
+                {
+                    if ((n & 1) == 1) B *= A;
+                    A = A * A;
+                    n >>= 1;
+                }
+                return B;
+            }
+        }
+
+
+    }
+
+    /// <summary>
+    /// データ構造
+    /// よく使用するもの スニペット済みのもの あまり使わないもの　の順に並べる
+    /// </summary>
+    namespace DataStructure
+    {
+        // (スニペット済み)
+        /// <summary>
+        /// 両端キュー 配列の前後で追加•Pop操作ができます 。
+        /// PushFront & PushBack : O(1)
+        /// PopFront & PopBack : O(1)
+        /// PeekFront & PeekBack : O(1)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        class Deque<T> : IEnumerable<T>
+        {
+            T[] buf;
+            int offset, count, cap;
+            public int Count { get { return count; } }
+            public Deque(IEnumerable<T> collection) : this()
+            {
+                foreach (var item in collection) PushBack(item);
+            }
+            public Deque(int cap) { buf = new T[this.cap = cap]; }
+            public Deque() { buf = new T[cap = 16]; }
+            public T this[int index]
+            {
+                get { return buf[GetIndex(index)]; }
+                set { buf[GetIndex(index)] = value; }
+            }
+            private int GetIndex(int index)
+            {
+                if (index >= cap) throw new IndexOutOfRangeException();
+                var ret = index + offset;
+                return ret >= cap ? ret - cap : ret;
+            }
+            public T PeekFront() => buf[offset];
+            public T PeekBack() => buf[GetIndex(Count - 1)];
+            public void PushFront(T item)
+            {
+                if (count == cap) Extend();
+                if (--offset < 0) offset += buf.Length;
+                buf[offset] = item;
+                ++count;
+            }
+            public T PopFront()
+            {
+                if (count == 0) throw new InvalidOperationException("collection is empty");
+                --count;
+                var ret = buf[offset++];
+                if (offset >= cap) offset -= cap;
+                return ret;
+            }
+            public void PushBack(T item)
+            {
+                if (count == cap) Extend();
+                var id = count++ + offset;
+                if (id >= cap) id -= cap;
+                buf[id] = item;
+            }
+            public T PopBack()
+            {
+                if (count == 0) throw new InvalidOperationException("collection is empty");
+                return buf[GetIndex(--count)];
+            }
+            public void Insert(int index, T item)
+            {
+                if (index > count) throw new IndexOutOfRangeException();
+                this.PushFront(item);
+                for (int i = 0; i < index; i++)
+                    this[i] = this[i + 1];
+                this[index] = item;
+            }
+            public T RemoveAt(int index)
+            {
+                if (index < 0 || index >= count) throw new IndexOutOfRangeException();
+                var ret = this[index];
+                for (int i = index; i > 0; i--)
+                    this[i] = this[i - 1];
+                this.PopFront();
+                return ret;
+            }
+            void Extend()
+            {
+                T[] newBuffer = new T[cap << 1];
+                if (offset > cap - count)
+                {
+                    var len = buf.Length - offset;
+                    Array.Copy(buf, offset, newBuffer, 0, len);
+                    Array.Copy(buf, 0, newBuffer, len, count - len);
+                }
+                else Array.Copy(buf, offset, newBuffer, 0, count);
+                buf = newBuffer;
+                offset = 0;
+                cap <<= 1;
+            }
+
+            public IEnumerator<T> GetEnumerator() => Items.ToList().GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                throw new NotImplementedException();
+            }
+
+            public T[] Items//デバッグ時に中身を調べるためのプロパティ
+            {
+                get
+                {
+                    var a = new T[count];
+                    for (int i = 0; i < count; i++)
+                        a[i] = this[i];
+                    return a;
+                }
+            }
+        }
 
 
 
@@ -717,6 +527,7 @@ namespace LIB340
             }
         }
 
+
         /// <summary>
         /// 重み付きUnionFind。  親ノードに重みのMerge結果をまとめます。
         /// 初期化時に重みを入力する
@@ -755,7 +566,7 @@ namespace LIB340
             public int GetMem(int x) => -P[Root(x)];
             public T Weight(int x) => W[x];
             /// <summary>要素の親の重みを取得します。 Set非推奨! </summary>
-            public T this[int x] { get => W[Root(x)]; set => W[Root(x)] = value; } 
+            public T this[int x] { get => W[Root(x)]; set => W[Root(x)] = value; }
             public List<int>[] Groups
             {
                 get
@@ -824,6 +635,7 @@ namespace LIB340
         }
 
 
+
         /// <summary>
         /// セグメントツリー 単更新・範囲検索 ジェネリクス
         /// </summary>
@@ -879,6 +691,7 @@ namespace LIB340
 
             public T this[int a, int b] => Query(a, b);
         }
+
 
 
         /// <summary>
@@ -968,6 +781,277 @@ namespace LIB340
         }
 
 
+
+        // (スニペット済み)
+        /// <summary>
+        /// 優先キュー 優先度の高い要素から順に取り出します。
+        /// Enqueue : O(logN)
+        /// Dequeue : O(logN)
+        /// Peek : O(1)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        class PriorityQueue<T> : IEnumerable<T>, ICollection, IEnumerable, ICloneable
+        {
+            List<T> m_heap;
+            Comparison<T> Comp;
+            public int Count => m_heap.Count;
+            public bool IsEmpty => Count == 0;
+            public PriorityQueue(IEnumerable<T> source) : this(null, 16, source) { }
+            public PriorityQueue(int capacity = 16, IEnumerable<T> source = null) : this(null, capacity, source) { }
+            public PriorityQueue(Comparison<T> comp, IEnumerable<T> source) : this(comp, 16, source) { }
+            public PriorityQueue(Comparison<T> comp, int capacity = 16, IEnumerable<T> source = null) { this.Comp = comp == null ? (x, y) => Comparer<T>.Default.Compare(x, y) : comp; m_heap = new List<T>(capacity); if (source != null) foreach (var x in source) Enqueue(x); }
+            /// <summary>要素を追加します。</summary>
+            public void Enqueue(T x)
+            {
+                var pos = Count;
+                m_heap.Add(x);
+                while (pos > 0)
+                {
+                    var p = (pos - 1) / 2;
+                    if (Comp(m_heap[p], x) <= 0) break;
+                    m_heap[pos] = m_heap[p];
+                    pos = p;
+                }
+                m_heap[pos] = x;
+                var que = new Queue<int>();
+
+            }
+            /// <summary>先頭の要素を取り出します。(値はキューから削除。)</summary>
+            public T Dequeue()
+            {
+                var value = m_heap[0];
+                var x = m_heap[Count - 1];
+                m_heap.RemoveAt(Count - 1);
+                if (Count == 0) return value;
+                var pos = 0;
+                while (pos * 2 + 1 < Count)
+                {
+                    var a = 2 * pos + 1;
+                    var b = 2 * pos + 2;
+                    if (b < Count && Comp(m_heap[b], m_heap[a]) < 0) a = b;
+                    if (Comp(m_heap[a], x) >= 0) break;
+                    m_heap[pos] = m_heap[a];
+                    pos = a;
+                }
+                m_heap[pos] = x;
+                return value;
+            }
+            /// <summary>先頭の要素を取得します。 (値はキューに保持。)</summary>
+            public T Peek() => m_heap[0];
+            public IEnumerator<T> GetEnumerator() { var x = (PriorityQueue<T>)Clone(); while (x.Count > 0) yield return x.Dequeue(); }
+            void CopyTo(Array array, int index) { foreach (var x in this) array.SetValue(x, index++); }
+            public object Clone() { var x = new PriorityQueue<T>(Comp, Count); x.m_heap.AddRange(m_heap); return x; }
+            public void Clear() => m_heap = new List<T>();
+            public void TrimExcess() => m_heap.TrimExcess();
+            public bool Contains(T item) { return m_heap.Contains(item); } //O(N)
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+            void ICollection.CopyTo(Array array, int index) => CopyTo(array, index);
+            bool ICollection.IsSynchronized => false;
+            object ICollection.SyncRoot => this;
+        }
+
+        
+    }
+
+
+    /// <summary>
+    /// グラフを使ったライブラリ群。
+    /// </summary>
+    namespace GraphExtension
+    {
+        /// <summary>
+        /// グラフ
+        /// 追加する辺次第で重み有り無し　変更できます。
+        /// 
+        /// 隣接リスト(グラフ) サイズの自動拡張機能つき
+        /// new時にサイズ指定するとサイズは固定
+        /// 辺重複可
+        /// </summary>
+        /// <typeparam name="TEdge"></typeparam>
+        class Graph<TEdge>
+        {
+            int maxsize = 0;
+            private Node<TEdge>[] G;
+            public Graph(int size = 1024)
+            {
+                maxsize = size;
+                G = new Node<TEdge>[size].Select(_ => _ = new Node<TEdge>()).ToArray();
+            }
+            /// <summary>一方向に辺を追加します。</summary>
+            /// <param name="edge"></param>
+            public void Add(Edge<TEdge> edge)
+            {
+                while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
+                G[edge.From].edges.Add(edge);
+            }
+            public void Add(int from, int to, TEdge value = default) => Add(new Edge<TEdge> { From = from, To = to, Value = value });
+            /// <summary>双方向に辺を追加します。</summary>
+            public void AddBoth(Edge<TEdge> edge)
+            {
+                Add(edge);
+                Add(new Edge<TEdge> { From = edge.To, To = edge.From, Value = edge.Value });
+            }
+            public void AddBoth(int u, int v, TEdge value = default) => AddBoth(new Edge<TEdge> { From = u, To = v, Value = value });
+            private void Expand()
+            {
+                var temp = new Node<TEdge>[maxsize *= 2].Select(_ => _ = new Node<TEdge>()).ToArray();
+                Array.Copy(G, temp, G.Length);
+                G = temp;
+            }
+            public IEnumerable<Edge<TEdge>> GetEdges()
+            {
+                foreach (var node in G)
+                    foreach (var edge in node)
+                        yield return edge;
+            }
+            public int Length => G.Length;
+            public Node<TEdge> this[int i] => G[i];
+            public IEnumerator<Node<TEdge>> GetEnumerator() => G.ToList().GetEnumerator();
+        }
+        class Graph : Graph<int>
+        {
+            public Graph(int size = 1024) : base(size) { }
+        }
+        public class Node<Tedge>
+        {
+            public List<Edge<Tedge>> edges = new List<Edge<Tedge>>();
+            public static implicit operator List<Edge<Tedge>>(Node<Tedge> node) => node.edges;
+            public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.GetEnumerator();
+            public IEnumerable<int> destinations => edges.Select(_ => _.To);
+        }
+        public struct Edge<T>
+        {
+            public int From, To;
+            public T Value;
+            public Edge(int from, int to, T value = default)
+            {
+                From = from; To = to; Value = value;
+            }
+            public Edge<T> Reversed() => new Edge<T> { From = To, To = From, Value = Value };
+        }
+
+
+        /// <summary>
+        /// ダイクストラ  始点から各頂点までの最小コストを求めます。 (有向グラフの拡張メソッド)
+        /// 必要なライブラリ : [優先キュー] [グラフ]
+        /// ※注意  負辺が含まれるとO(2^n)になるケースがあります。
+        /// Search : O(ElogV)
+        /// </summary>
+        static class Dijkstraa
+        {
+            public static long dijkstra(this Graph<long> G, int from, int to) => dijkstra(G, from)[to];
+            public static long dijkstra(this Graph<long> G, int from, int to, Comparison<(int to, long cost)> comp) => dijkstra(G, from, comp)[to];
+            public static long[] dijkstra(this Graph<long> G, int from) => dijkstra(G, from, (x, y) => x.cost.CompareTo(y.cost));
+            public static long[] dijkstra(this Graph<long> G, int from, Comparison<(int to, long cost)> comp)
+            {
+                var d = Enumerable.Repeat(long.MaxValue / 4, G.Length).ToArray();
+                var que = new PriorityQueue<(int to, long cost)>(comp);
+                d[from] = 0;
+                que.Enqueue((from, 0));
+                while (que.Count > 0)
+                {
+                    var (v, c) = que.Dequeue();
+                    if (d[v] < c) continue;
+                    foreach (var edge in G[v])
+                    {
+                        long ecost = (long)(edge.Value);
+
+                        int nv = edge.To;
+                        long nc = d[v] + ecost;
+                        if (d[nv] > nc)
+                        {
+                            que.Enqueue((nv, d[nv] = nc));
+                        }
+                    }
+                }
+                return d;
+            }
+            static long ChLong(object value) => (long)Convert.ChangeType(value, typeof(long));
+        }
+
+        
+
+        
+
+
+
+        /// <summary>
+        /// 無向グラフから最小全域木を作成します。　(無向グラフの拡張メソッド)
+        /// 最小全域木の辺のコスト和を求めます。
+        /// 必要なライブラリ : [UnionFind] [グラフ]
+        /// </summary>
+        static class Kruskal
+        {
+            /// <summary>グラフを最小全域木に変換します。</summary>
+            public static Graph<long> MinimumSpanningTree(this Graph<long> G, Comparison<Edge<long>> comp = null)
+            {
+                comp ??= (a, b) => a.Value.CompareTo(b.Value);
+                var res = new Graph<long>();
+                var union = new UnionFind(G.Length);
+                var edges = G.GetEdges().ToArray();
+                Array.Sort(edges, comp);
+                foreach (var e in edges)
+                {
+                    if (union.IsSame(e.From, e.To)) continue;
+                    union.Unite(e.From, e.To);
+                    res.AddBoth(new Edge<long> { From = e.From, To = e.To, Value = e.Value });
+                }
+                return res;
+            }
+            /// <summary>全区間の距離(コスト)の和を求めます。</summary>
+            public static long CostSum(this Graph<long> G)
+            {
+                var res = 0L;
+                foreach (var item in G.GetEdges())
+                {
+                    res += item.Value;
+                }
+                return res / 2;
+            }
+        }
+
+
+        /// <summary>
+        /// トポロジカルソート  DAGを順序付けし、起点の要素から並べた一次元配列に直します。
+        /// </summary>
+        static class TopologicalSort
+        {
+            // TODO Degreesの実装
+            /// <summary>トポロジカルソートした結果を返します。不可能な場合nullを返します。</summary>
+            /// <param name="G">グラフ</param>
+            /// <param name="Degrees">Degreesはその頂点にのびる辺の数</param>
+            /// <returns></returns>
+            public static List<int> Topologicalsort(Graph<int> G, int[] Degrees)
+            {
+                var que = new Queue<int>();
+                for (int i = 0; i < Degrees.Length; i++)
+                {
+                    if (Degrees[i] == 0) que.Enqueue(i);
+                }
+                var sorted = new List<int>();
+                while (que.Count > 0)
+                {
+                    var v = que.Dequeue();
+                    sorted.Add(v);
+                    foreach (var i in G[v])
+                    {
+                        Degrees[i.To]--;
+                        if (Degrees[i.To] == 0) que.Enqueue(i.To);
+                    }
+                }
+                if (Degrees.Length != sorted.Count) return null;
+                return sorted;
+            }
+        }
+    }
+
+        
+
+
+
+        
+    namespace Others
+    {
         //TODO 区間加算の実装 このままではセグ木で物足りてしまう
         /// <summary>
         /// BIT  セグ木より定数倍高速な範囲加算に。
@@ -1057,8 +1141,6 @@ namespace LIB340
             }
         }
 
-
-
         // Zアルゴリズム 先頭文字列と何文字一致しているか
         class ZAlgorithm
         {
@@ -1096,15 +1178,9 @@ namespace LIB340
             }
             public int this[int i] => Same[i];
         }
-    }
 
 
 
-
-
-
-    namespace minerAlgolithms
-    {
         /// <summary>
         /// defaultdict  pythonのdefaultdiftを参考にした。
         /// 無いキーを参照するとdefaultの値を返す。
@@ -1141,17 +1217,18 @@ namespace LIB340
             public int Count => itemToIndex.Count;
         }
 
+
         /// <summary>
         /// 入力を独立な値に直し、ソートして番号を割り振ります。
         /// データの追加は初期化時のみできます。
-        /// [ライブラリ] MySortedSet<T>
+        /// 必要なライブラリ : MySortedSet<T>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         class SortedIndexConverter<T> where T : IComparable
         {
             Dictionary<T, int> itemToIndex = new Dictionary<T, int>();
             List<T> indexToItem = new List<T>();
-            public SortedIndexConverter(T[] items)
+            public SortedIndexConverter(IEnumerable<T> items)
             {
                 var sorted = new SortedSet<T>(items);
                 foreach (var item in sorted)
@@ -1194,6 +1271,28 @@ namespace LIB340
                 public int Compare(U x, U y) => comp(x, y);
             }
         }
+    }
+
+
+        
+
+
+
+    
+    
+
+
+
+
+
+
+
+        
+
+
+        
+
+        
         
 
 
@@ -1331,7 +1430,11 @@ namespace LIB340
 
 
 
-        /// <summary> 座標圧縮 </summary>
+        
+
+        /// <summary>
+        /// 座標圧縮
+        /// </summary>
         static class CoordinateCompression
         {
             public static int[] Compress(int[] A)
@@ -1355,48 +1458,11 @@ namespace LIB340
             }
         }
 
-    }
+    
 
 
 
-    //Modしない計算 BigInteger型で返す
-    // TODO 
-    /// <summary> </summary>
-    class BigMath
-    {
-        const int arysize = 100;
-        static BigInteger[] facs = new BigInteger[arysize];
-        static int facscount = -1;
-        public static BigInteger Fac(BigInteger n)
-        {
-            facs[0] = 1;
-            while (facscount <= n)
-            {
-                facs[++facscount + 1] = facs[facscount] * (facscount + 1);
-            }
-            return facs[(int)n];
-        }
-        public static BigInteger Fac(BigInteger n, BigInteger r)
-        {
-            BigInteger ans = n;
-            while (n++ < r)
-            {
-                ans *= n;
-            }
-            return ans;
-        }
-        public static BigInteger nCr(BigInteger n, BigInteger r)
-        {
-            return (n < r) ? 0
-                 : (n == r) ? 1
-                            : (BigInteger.Max(n, r) <= arysize) ? Fac(n) / (Fac(r) * Fac(n - r))
-                                : Fac(n - r + 1, n) / Fac(r);
-        }
-        public static BigInteger nPr(BigInteger n, BigInteger r)
-        {
-            return Fac(n) / Fac(n - r);
-        }
-    }
+    
 
 
 
@@ -1954,6 +2020,8 @@ namespace TEST
     /// ダイクストラの速度は大して変わらなかった (100ダイク*10000 => 189ms)
     /// 最大流に対応するためEdgeはクラスにしている。
     /// 辺重複不可 辺削除可
+    /// 
+    /// ( Nodeはforeachで回した時にedgeを取り出す動作とインデックスによるsetを両立するためにある。)
     /// </summary>
     namespace CHANGEABLEGRAPH
     {
@@ -1973,17 +2041,18 @@ namespace TEST
                 while (Math.Max(edge.From, edge.To) >= maxsize) Expand();
                 G[edge.From].edges[edge.To] = edge;
             }
-            public void Remove(Edge<TEdge> edge)
-            {
-                G[edge.From].edges.Remove(edge.To);
-            }
+            public void Add(int from, int to, TEdge val = default) => Add(new Edge<TEdge>(from,to,val));
+            public void Remove(Edge<TEdge> edge) => G[edge.From].edges.Remove(edge.To);
+            public void Remove(int from, int to, TEdge val = default) => Remove(new Edge<TEdge>(from, to, val));
             public void Change(Edge<TEdge> edge) => Add(edge);
             public bool Contains(Edge<TEdge> edge) => G[edge.From].edges.ContainsKey(edge.To);
+            public bool Contains(int from, int to, TEdge val = default) => Contains(new Edge<TEdge>(from, to, val));
             public void AddBoth(Edge<TEdge> edge)
             {
                 Add(edge);
                 Add(new Edge<TEdge> { From = edge.To, To = edge.From, Value = edge.Value });
             }
+            public void AddBoth(int from, int to, TEdge val = default) => AddBoth(new Edge<TEdge>(from, to, val));
             public IEnumerable<Edge<TEdge>> GetEdges()
             {
                 foreach (var node in G)
@@ -2005,14 +2074,18 @@ namespace TEST
         public class Node<Tedge>
         {
             public Dictionary<int, Edge<Tedge>> edges = new Dictionary<int, Edge<Tedge>>();
+            public IEnumerable destinations => edges.Select(_ => _.Value.To);
             public static implicit operator List<Edge<Tedge>>(Node<Tedge> node) => node.edges.Values.ToList();
             public IEnumerator<Edge<Tedge>> GetEnumerator() => edges.Values.GetEnumerator();
             public Edge<Tedge> this[int i] { get => edges.TryGetValue(i, out Edge<Tedge> edge) ? edge : default; set => edges[i] = value; }
         }
         public class Edge<T>
         {
+            public Edge(int from, int to, T val = default) { From = from; To = to; Value = val; }
+            public Edge() { }
             public int From, To;
             public T Value;
+            public Edge<T> Reversed() => new Edge<T> { From = To, To = From, Value = Value };
         }
     }
 
